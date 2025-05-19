@@ -2,6 +2,17 @@
 
 A Node.js backend application for the Anevia eye conjunctiva scanning system for anemia detection.
 
+## Table of Contents
+
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Prerequisites](#prerequisites)
+- [API Endpoints](#api-endpoints)
+- [Local Development Setup](#local-development-setup)
+- [AWS EC2 Deployment](#aws-ec2-deployment)
+- [Testing](#testing)
+- [License](#license)
+
 ## Features
 
 - Upload and process eye conjunctiva images
@@ -25,7 +36,7 @@ A Node.js backend application for the Anevia eye conjunctiva scanning system for
 
 1. Clone the repository:
    ```
-   git clone <repository-url>
+   git clone https://github.com/Chhrone/anevia-backend.git
    cd anevia-backend
    ```
 
@@ -71,7 +82,7 @@ A Node.js backend application for the Anevia eye conjunctiva scanning system for
 
 3. Clone the repository:
    ```
-   git clone <repository-url>
+   git clone https://github.com/Chhrone/anevia-backend.git
    cd anevia-backend
    ```
 
@@ -107,7 +118,7 @@ A Node.js backend application for the Anevia eye conjunctiva scanning system for
 
 1. Clone the repository on your EC2 instance:
    ```
-   git clone <repository-url>
+   git clone https://github.com/Chhrone/anevia-backend.git
    cd anevia-backend
    ```
 
@@ -123,6 +134,20 @@ A Node.js backend application for the Anevia eye conjunctiva scanning system for
 
 4. Follow the prompts to configure your environment with your existing database credentials
 
+### Accessing the API on EC2
+
+After deployment, the API will be accessible at:
+
+```
+http://18.139.227.61:5000/api/scans
+```
+
+For better accessibility, consider:
+
+1. Setting up a domain name using AWS Route 53 or another DNS provider
+2. Configuring HTTPS using a service like Let's Encrypt
+3. Setting up a reverse proxy like Nginx to handle SSL termination and serve the API on port 80/443
+
 ## API Endpoints
 
 ### POST /api/scans
@@ -135,7 +160,11 @@ Upload an eye conjunctiva image for anemia detection.
 - Body:
   - image: File (image)
 
-**Response:**
+**Constraints:**
+- Maximum file size: 10MB
+- Accepted file types: jpg, jpeg, png
+
+**Success Response (200 OK):**
 ```json
 {
   "status": "success",
@@ -149,15 +178,52 @@ Upload an eye conjunctiva image for anemia detection.
 }
 ```
 
+**Error Responses:**
+
+- **400 Bad Request**
+```json
+{
+  "status": "fail",
+  "message": "Invalid file format or request"
+}
+```
+
+- **413 Payload Too Large**
+```json
+{
+  "status": "fail",
+  "message": "File size exceeds the 10MB limit"
+}
+```
+
+- **500 Internal Server Error**
+```json
+{
+  "status": "error",
+  "message": "Server error while uploading scan"
+}
+```
+
 ## Testing
 
 You can test the API using tools like Postman, cURL, or any HTTP client that can send multipart/form-data requests to the `/api/scans` endpoint.
 
-### Example cURL command:
+### Example cURL commands:
+
+#### Local testing:
 
 ```bash
 curl -X POST \
   http://localhost:5000/api/scans \
+  -H 'Content-Type: multipart/form-data' \
+  -F 'image=@/path/to/your/image.jpg'
+```
+
+#### Testing on EC2:
+
+```bash
+curl -X POST \
+  http://18.139.227.61:5000/api/scans \
   -H 'Content-Type: multipart/form-data' \
   -F 'image=@/path/to/your/image.jpg'
 ```
