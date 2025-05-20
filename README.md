@@ -16,7 +16,9 @@ A Node.js backend application for the Anevia eye conjunctiva scanning system for
 ## Features
 
 - Upload and process eye conjunctiva images
-- Detect anemia using a simulated model
+- Two-step AI processing:
+  1. Eye image cropping to extract conjunctiva
+  2. Anemia detection from conjunctiva analysis
 - Store scan results in PostgreSQL database
 - RESTful API for client applications
 
@@ -48,7 +50,7 @@ A Node.js backend application for the Anevia eye conjunctiva scanning system for
 3. Create a PostgreSQL database:
    ```sql
    CREATE DATABASE anevia_db;
-   CREATE USER anevia_admin WITH ENCRYPTED PASSWORD 'anevia';
+   CREATE USER anevia_admin WITH ENCRYPTED PASSWORD '<your_secure_password>';
    GRANT ALL PRIVILEGES ON DATABASE anevia_db TO anevia_admin;
    ```
 
@@ -139,7 +141,7 @@ A Node.js backend application for the Anevia eye conjunctiva scanning system for
 After deployment, the API will be accessible at:
 
 ```
-http://18.139.227.61:5000/api/scans
+http://<Your EC2 Public IP>:5000/api/scans
 ```
 
 For better accessibility, consider:
@@ -164,7 +166,14 @@ Upload an eye conjunctiva image for anemia detection.
 - Maximum file size: 10MB
 - Accepted file types: jpg, jpeg, png
 
-**Success Response (200 OK):**
+**Processing Flow:**
+1. Original eye image is saved to `/images/scans/scan-{scanId}.jpg`
+2. Eye cropping AI model extracts the conjunctiva region
+3. Cropped conjunctiva is saved to `/images/conjunctivas/conj-{scanId}.jpg`
+4. Anemia detection AI model analyzes the conjunctiva image
+5. Results are stored in the database and returned to the client
+
+**Success Response (201 Created):**
 ```json
 {
   "status": "success",
@@ -204,14 +213,94 @@ Upload an eye conjunctiva image for anemia detection.
 }
 ```
 
+### GET /api/scans
+
+Retrieve a list of all scans.
+
+**Request:**
+- Method: GET
+
+**Success Response (200 OK):**
+```json
+{
+  "error": false,
+  "message": "Scans fetched successfully",
+  "listScans": [
+    {
+      "id": "a1b2c3d4",
+      "photoUrl": "/scans/scan-a1b2c3d4.jpg",
+      "scanResult": true,
+      "createdAt": "2023-05-20T12:34:56.789Z"
+    },
+    {
+      "id": "e5f6g7h8",
+      "photoUrl": "/scans/scan-e5f6g7h8.jpg",
+      "scanResult": false,
+      "createdAt": "2023-05-19T10:24:36.123Z"
+    }
+  ]
+}
+```
+
+**Error Response:**
+- **500 Internal Server Error**
+```json
+{
+  "error": true,
+  "message": "Failed to fetch scans"
+}
+```
+
+### GET /api/scans/{id}
+
+Retrieve a specific scan by ID.
+
+**Request:**
+- Method: GET
+- URL Parameters:
+  - id: The scan ID to retrieve
+
+**Success Response (200 OK):**
+```json
+{
+  "error": false,
+  "message": "Scan fetched successfully",
+  "scan": {
+    "id": "a1b2c3d4",
+    "photoUrl": "/scans/scan-a1b2c3d4.jpg",
+    "scanResult": true,
+    "createdAt": "2023-05-20T12:34:56.789Z"
+  }
+}
+```
+
+**Error Responses:**
+
+- **404 Not Found**
+```json
+{
+  "error": true,
+  "message": "Scan with ID a1b2c3d4 not found"
+}
+```
+
+- **500 Internal Server Error**
+```json
+{
+  "error": true,
+  "message": "Failed to fetch scan"
+}
+```
+
 ## Testing
 
 You can test the API using tools like Postman, cURL, or any HTTP client that can send multipart/form-data requests to the `/api/scans` endpoint.
 
 ### Example cURL commands:
 
-#### Local testing:
+#### POST /api/scans (Upload a scan):
 
+**Local testing:**
 ```bash
 curl -X POST \
   http://localhost:5000/api/scans \
@@ -219,16 +308,41 @@ curl -X POST \
   -F 'image=@/path/to/your/image.jpg'
 ```
 
-#### Testing on EC2:
-
+**EC2 testing:**
 ```bash
 curl -X POST \
-  http://18.139.227.61:5000/api/scans \
+  http://<Your EC2 Public IP>:5000/api/scans \
   -H 'Content-Type: multipart/form-data' \
   -F 'image=@/path/to/your/image.jpg'
 ```
 
 Replace `/path/to/your/image.jpg` with the actual path to an image file on your system.
+
+#### GET /api/scans (Get all scans):
+
+**Local testing:**
+```bash
+curl -X GET http://localhost:5000/api/scans
+```
+
+**EC2 testing:**
+```bash
+curl -X GET http://<Your EC2 Public IP>:5000/api/scans
+```
+
+#### GET /api/scans/{id} (Get scan by ID):
+
+**Local testing:**
+```bash
+curl -X GET http://localhost:5000/api/scans/a1b2c3d4
+```
+
+**EC2 testing:**
+```bash
+curl -X GET http://<Your EC2 Public IP>:5000/api/scans/a1b2c3d4
+```
+
+Replace `a1b2c3d4` with the actual scan ID you want to retrieve.
 
 ## License
 

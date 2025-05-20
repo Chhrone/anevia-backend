@@ -3,6 +3,7 @@
 const scanController = require('../controllers/scanController');
 
 module.exports = [
+    // POST endpoint to upload a new scan
     {
         method: 'POST',
         path: '/api/scans',
@@ -16,5 +17,19 @@ module.exports = [
             },
             handler: scanController.uploadScan
         }
+    },
+
+    // GET endpoint to retrieve all scans
+    {
+        method: 'GET',
+        path: '/api/scans',
+        handler: scanController.getAllScans
+    },
+
+    // GET endpoint to retrieve a specific scan by ID
+    {
+        method: 'GET',
+        path: '/api/scans/{id}',
+        handler: scanController.getScanById
     }
 ];

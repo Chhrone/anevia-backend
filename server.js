@@ -42,6 +42,18 @@ const init = async () => {
         }
     });
 
+    // Serve conjunctiva images
+    server.route({
+        method: 'GET',
+        path: '/conjunctivas/{param*}',
+        handler: {
+            directory: {
+                path: Path.join(__dirname, 'images/conjunctivas'),
+                listing: false
+            }
+        }
+    });
+
     await server.start();
     console.log('Server running on %s', server.info.uri);
 };

@@ -52,14 +52,24 @@ if [ ! -f .env ]; then
     read -p "Enter database host (default: localhost): " db_host
     db_host=${db_host:-localhost}
 
-    read -p "Enter database user (default: anevia_admin): " db_user
-    db_user=${db_user:-anevia_admin}
+    read -p "Enter database user: " db_user
+    if [ -z "$db_user" ]; then
+        echo "Database user cannot be empty"
+        exit 1
+    fi
 
-    read -p "Enter database password (default: anevia): " db_password
-    db_password=${db_password:-anevia}
+    read -s -p "Enter database password: " db_password
+    echo
+    if [ -z "$db_password" ]; then
+        echo "Database password cannot be empty"
+        exit 1
+    fi
 
-    read -p "Enter database name (default: anevia_db): " db_name
-    db_name=${db_name:-anevia_db}
+    read -p "Enter database name: " db_name
+    if [ -z "$db_name" ]; then
+        echo "Database name cannot be empty"
+        exit 1
+    fi
 
     read -p "Enter database port (default: 5432): " db_port
     db_port=${db_port:-5432}
@@ -84,10 +94,10 @@ const { Pool } = require('pg');
 require('dotenv').config();
 
 const pool = new Pool({
-  user: process.env.DB_USER || 'anevia_admin',
+  user: process.env.DB_USER,
   host: process.env.DB_HOST || 'localhost',
-  database: process.env.DB_NAME || 'anevia_db',
-  password: process.env.DB_PASSWORD || 'anevia',
+  database: process.env.DB_NAME,
+  password: process.env.DB_PASSWORD,
   port: process.env.DB_PORT || 5432,
 });
 

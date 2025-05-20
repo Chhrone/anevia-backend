@@ -4,6 +4,7 @@ const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
 const path = require('path');
 const Scan = require('../models/scan');
+const EyeCroppingModel = require('../models/eyeCroppingModel');
 const AnemiaDetectionModel = require('../models/anemiaDetectionModel');
 
 // Use fs.promises for file operations
@@ -12,6 +13,68 @@ const fsPromises = fs.promises;
 const generateScanId = () => {
     // Generate a random 8-character string
     return uuidv4().replace(/-/g, '').substring(0, 8);
+};
+
+// Get all scans
+exports.getAllScans = async (request, h) => {
+    try {
+        const scans = await Scan.getAll();
+
+        // Transform data to match the required response format
+        const listScans = scans.map(scan => ({
+            id: scan.scanId,
+            photoUrl: scan.photoUrl,
+            scanResult: scan.scanResult,
+            createdAt: scan.scanDate
+        }));
+
+        return h.response({
+            error: false,
+            message: 'Scans fetched successfully',
+            listScans
+        }).code(200);
+    } catch (error) {
+        console.error('Error fetching scans:', error);
+        return h.response({
+            error: true,
+            message: 'Failed to fetch scans'
+        }).code(500);
+    }
+};
+
+// Get scan by ID
+exports.getScanById = async (request, h) => {
+    try {
+        const { id } = request.params;
+        const scan = await Scan.findByScanId(id);
+
+        if (!scan) {
+            return h.response({
+                error: true,
+                message: `Scan with ID ${id} not found`
+            }).code(404);
+        }
+
+        // Transform data to match the required response format
+        const scanData = {
+            id: scan.scanId,
+            photoUrl: scan.photoUrl,
+            scanResult: scan.scanResult,
+            createdAt: scan.scanDate
+        };
+
+        return h.response({
+            error: false,
+            message: 'Scan fetched successfully',
+            scan: scanData
+        }).code(200);
+    } catch (error) {
+        console.error(`Error fetching scan with ID ${request.params.id}:`, error);
+        return h.response({
+            error: true,
+            message: 'Failed to fetch scan'
+        }).code(500);
+    }
 };
 
 exports.uploadScan = async (request, h) => {
@@ -29,20 +92,27 @@ exports.uploadScan = async (request, h) => {
         // Generate a random 8-character scanId
         const scanId = generateScanId();
 
-        // Create directory if it doesn't exist
-        const uploadDir = path.join(__dirname, '../../images/scans');
-        if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir, { recursive: true });
+        // Create directories if they don't exist
+        const scansDir = path.join(__dirname, '../../images/scans');
+        const conjunctivasDir = path.join(__dirname, '../../images/conjunctivas');
+
+        if (!fs.existsSync(scansDir)) {
+            fs.mkdirSync(scansDir, { recursive: true });
+        }
+
+        if (!fs.existsSync(conjunctivasDir)) {
+            fs.mkdirSync(conjunctivasDir, { recursive: true });
         }
 
         // Get file extension
         const filename = image.hapi.filename;
         const extension = path.extname(filename);
 
-        // Create file path
-        const filepath = path.join(uploadDir, `scan-${scanId}${extension}`);
+        // Create file paths
+        const scanFilepath = path.join(scansDir, `scan-${scanId}${extension}`);
+        const conjunctivaFilepath = path.join(conjunctivasDir, `conj-${scanId}${extension}`);
 
-        // Save the file
+        // Read the image data
         const buffer = await new Promise((resolve, reject) => {
             const chunks = [];
             image.on('data', (chunk) => {
@@ -54,16 +124,25 @@ exports.uploadScan = async (request, h) => {
             image.on('error', reject);
         });
 
-        await fsPromises.writeFile(filepath, buffer);
+        // Save the original eye image
+        await fsPromises.writeFile(scanFilepath, buffer);
 
-        // Create photo URL
+        // Create photo URL for the original image
         const photoUrl = `/scans/scan-${scanId}${extension}`;
 
-        // Record the timestamp when the image was received
-        const scanDate = new Date();
+        // Step 1: Use the eye cropping model to extract the conjunctiva
+        console.log(`Processing image ${scanId} to extract conjunctiva...`);
+        const conjunctivaBuffer = await EyeCroppingModel.extractConjunctiva(buffer);
 
-        // Analyze the image with the anemia detection model
-        const scanResult = await AnemiaDetectionModel.analyzeImage(buffer);
+        // Save the cropped conjunctiva image
+        await fsPromises.writeFile(conjunctivaFilepath, conjunctivaBuffer);
+
+        // Step 2: Use the anemia detection model to analyze the conjunctiva
+        console.log(`Analyzing conjunctiva image ${scanId} for anemia detection...`);
+        const scanResult = await AnemiaDetectionModel.analyzeConjunctiva(conjunctivaBuffer);
+
+        // Record the timestamp after all processing is complete
+        const scanDate = new Date();
 
         // Create scan record
         const scan = new Scan({
