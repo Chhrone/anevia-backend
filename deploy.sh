@@ -58,8 +58,7 @@ if [ ! -f .env ]; then
         exit 1
     fi
 
-    read -s -p "Enter database password: " db_password
-    echo
+    read -p "Enter database password: " db_password
     if [ -z "$db_password" ]; then
         echo "Database password cannot be empty"
         exit 1
