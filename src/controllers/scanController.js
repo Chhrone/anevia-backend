@@ -22,10 +22,10 @@ exports.getAllScans = async (request, h) => {
 
         // Transform data to match the required response format
         const listScans = scans.map(scan => ({
-            id: scan.scanId,
+            scanId: scan.scanId,
             photoUrl: scan.photoUrl,
             scanResult: scan.scanResult,
-            createdAt: scan.scanDate
+            scanDate: scan.scanDate
         }));
 
         return h.response({
@@ -57,10 +57,10 @@ exports.getScanById = async (request, h) => {
 
         // Transform data to match the required response format
         const scanData = {
-            id: scan.scanId,
+            scanId: scan.scanId,
             photoUrl: scan.photoUrl,
             scanResult: scan.scanResult,
-            createdAt: scan.scanDate
+            scanDate: scan.scanDate
         };
 
         return h.response({

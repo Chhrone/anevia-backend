@@ -227,16 +227,16 @@ Retrieve a list of all scans.
   "message": "Scans fetched successfully",
   "listScans": [
     {
-      "id": "a1b2c3d4",
+      "scanId": "a1b2c3d4",
       "photoUrl": "/scans/scan-a1b2c3d4.jpg",
       "scanResult": true,
-      "createdAt": "2023-05-20T12:34:56.789Z"
+      "scanDate": "2023-05-20T12:34:56.789Z"
     },
     {
-      "id": "e5f6g7h8",
+      "scanId": "e5f6g7h8",
       "photoUrl": "/scans/scan-e5f6g7h8.jpg",
       "scanResult": false,
-      "createdAt": "2023-05-19T10:24:36.123Z"
+      "scanDate": "2023-05-19T10:24:36.123Z"
     }
   ]
 }
@@ -266,10 +266,10 @@ Retrieve a specific scan by ID.
   "error": false,
   "message": "Scan fetched successfully",
   "scan": {
-    "id": "a1b2c3d4",
+    "scanId": "a1b2c3d4",
     "photoUrl": "/scans/scan-a1b2c3d4.jpg",
     "scanResult": true,
-    "createdAt": "2023-05-20T12:34:56.789Z"
+    "scanDate": "2023-05-20T12:34:56.789Z"
   }
 }
 ```
