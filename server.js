@@ -30,6 +30,19 @@ const init = async () => {
     // Register routes
     server.route(routes);
 
+    // Serve static files from public directory (documentation)
+    server.route({
+        method: 'GET',
+        path: '/{param*}',
+        handler: {
+            directory: {
+                path: Path.join(__dirname, 'public'),
+                index: ['index.html'],
+                listing: false
+            }
+        }
+    });
+
     // Serve scan images
     server.route({
         method: 'GET',

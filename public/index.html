@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anevia API Documentation</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1><i class="fas fa-eye"></i> Anevia API</h1>
+            <p>Eye Conjunctiva Scanning System for Anemia Detection</p>
+        </div>
+    </header>
+
+    <main class="container main-content">
+        <aside class="sidenav">
+            <div class="sidenav-content">
+                <h3>Contents</h3>
+                <ul>
+                    <li><a href="#overview">API Overview</a></li>
+                    <li><a href="#endpoints">API Endpoints</a></li>
+                    <li class="sub-item"><a href="#post-scans">POST /api/scans</a></li>
+                    <li class="sub-item"><a href="#get-scans">GET /api/scans</a></li>
+                    <li class="sub-item"><a href="#get-scan-by-id">GET /api/scans/{id}</a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <div class="content-area">
+            <section id="overview" class="intro">
+                <h2>API Overview</h2>
+                <p>
+                    The Anevia API provides endpoints for uploading eye conjunctiva images,
+                    processing them for anemia detection, and retrieving scan results.
+                </p>
+                <div class="api-url">
+                    <strong>Base URL:</strong> <code>https://server.anevia.my.id</code>
+                </div>
+            </section>
+
+            <section id="endpoints" class="endpoints">
+                <h2>API Endpoints</h2>
+
+            <div class="endpoint" id="post-scans">
+                <div class="endpoint-header">
+                    <span class="method post">POST</span>
+                    <span class="path">/api/scans</span>
+                </div>
+                <div class="endpoint-content">
+                    <h3>Upload Eye Image for Anemia Detection</h3>
+                    <p>
+                        Upload an eye conjunctiva image for anemia detection. The image will be processed
+                        through a two-step AI model: first to extract the conjunctiva region, then to
+                        analyze it for anemia detection.
+                    </p>
+
+                    <div class="subsection">
+                        <h4>Request</h4>
+                        <p><strong>Content-Type:</strong> <code>multipart/form-data</code></p>
+                        <p><strong>Body:</strong></p>
+                        <ul>
+                            <li><code>image</code>: File (image)</li>
+                        </ul>
+                    </div>
+
+                    <div class="subsection">
+                        <h4>Constraints</h4>
+                        <ul>
+                            <li>Maximum file size: 10MB</li>
+                            <li>Accepted file types: jpg, jpeg, png</li>
+                        </ul>
+                    </div>
+
+                    <div class="subsection">
+                        <h4>Processing Flow</h4>
+                        <ol>
+                            <li>Original eye image is saved to <code>/images/scans/scan-{scanId}.jpg</code></li>
+                            <li>Eye cropping AI model extracts the conjunctiva region</li>
+                            <li>Cropped conjunctiva is saved to <code>/images/conjunctivas/conj-{scanId}.jpg</code></li>
+                            <li>Anemia detection AI model analyzes the conjunctiva image</li>
+                            <li>Results are stored in the database and returned to the client</li>
+                        </ol>
+                    </div>
+
+                    <div class="subsection">
+                        <h4>Success Response (201 Created)</h4>
+                        <pre><code>{
+  "status": "success",
+  "message": "Image uploaded successfully",
+  "data": {
+    "scanId": "a1b2c3d4",
+    "photoUrl": "/scans/scan-a1b2c3d4.jpg",
+    "scanResult": true,
+    "scanDate": "2023-05-20T12:34:56.789Z"
+  }
+}</code></pre>
+                    </div>
+
+                    <div class="subsection">
+                        <h4>Error Responses</h4>
+                        <p><strong>400 Bad Request</strong></p>
+                        <pre><code>{
+  "status": "fail",
+  "message": "No image uploaded"
+}</code></pre>
+                        <p><strong>500 Internal Server Error</strong></p>
+                        <pre><code>{
+  "status": "error",
+  "message": "An error occurred while uploading the image"
+}</code></pre>
+                    </div>
+
+                    <div class="subsection">
+                        <h4>Example</h4>
+                        <p>Using cURL:</p>
+                        <pre><code>curl -X POST \
+  https://server.anevia.my.id/api/scans \
+  -H 'Content-Type: multipart/form-data' \
+  -F 'image=@/path/to/your/image.jpg'</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="endpoint" id="get-scans">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="path">/api/scans</span>
+                </div>
+                <div class="endpoint-content">
+                    <h3>Get All Scans</h3>
+                    <p>
+                        Retrieve a list of all scans in the system, ordered by scan date (newest first).
+                    </p>
+
+                    <div class="subsection">
+                        <h4>Success Response (200 OK)</h4>
+                        <pre><code>{
+  "error": false,
+  "message": "Scans fetched successfully",
+  "listScans": [
+    {
+      "id": "a1b2c3d4",
+      "photoUrl": "/scans/scan-a1b2c3d4.jpg",
+      "scanResult": true,
+      "createdAt": "2023-05-20T12:34:56.789Z"
+    },
+    {
+      "id": "e5f6g7h8",
+      "photoUrl": "/scans/scan-e5f6g7h8.jpg",
+      "scanResult": false,
+      "createdAt": "2023-05-19T10:24:36.123Z"
+    }
+  ]
+}</code></pre>
+                    </div>
+
+                    <div class="subsection">
+                        <h4>Error Response</h4>
+                        <p><strong>500 Internal Server Error</strong></p>
+                        <pre><code>{
+  "error": true,
+  "message": "Failed to fetch scans"
+}</code></pre>
+                    </div>
+
+                    <div class="subsection">
+                        <h4>Example</h4>
+                        <p>Using cURL:</p>
+                        <pre><code>curl -X GET https://server.anevia.my.id/api/scans</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="endpoint" id="get-scan-by-id">
+                <div class="endpoint-header">
+                    <span class="method get">GET</span>
+                    <span class="path">/api/scans/{id}</span>
+                </div>
+                <div class="endpoint-content">
+                    <h3>Get Scan by ID</h3>
+                    <p>
+                        Retrieve a specific scan by its ID.
+                    </p>
+
+                    <div class="subsection">
+                        <h4>Parameters</h4>
+                        <p><strong>URL Parameters:</strong></p>
+                        <ul>
+                            <li><code>id</code>: The scan ID to retrieve</li>
+                        </ul>
+                    </div>
+
+                    <div class="subsection">
+                        <h4>Success Response (200 OK)</h4>
+                        <pre><code>{
+  "error": false,
+  "message": "Scan fetched successfully",
+  "scan": {
+    "id": "a1b2c3d4",
+    "photoUrl": "/scans/scan-a1b2c3d4.jpg",
+    "scanResult": true,
+    "createdAt": "2023-05-20T12:34:56.789Z"
+  }
+}</code></pre>
+                    </div>
+
+                    <div class="subsection">
+                        <h4>Error Responses</h4>
+                        <p><strong>404 Not Found</strong></p>
+                        <pre><code>{
+  "error": true,
+  "message": "Scan with ID a1b2c3d4 not found"
+}</code></pre>
+                        <p><strong>500 Internal Server Error</strong></p>
+                        <pre><code>{
+  "error": true,
+  "message": "Failed to fetch scan"
+}</code></pre>
+                    </div>
+
+                    <div class="subsection">
+                        <h4>Example</h4>
+                        <p>Using cURL:</p>
+                        <pre><code>curl -X GET https://server.anevia.my.id/api/scans/a1b2c3d4</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2023-2024 Anevia - Eye Conjunctiva Scanning System for Anemia Detection</p>
+        </div>
+    </footer>
+
+    <script src="js/script.js"></script>
+</body>
+</html>
