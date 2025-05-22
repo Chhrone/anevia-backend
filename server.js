@@ -9,6 +9,8 @@ const Path = require('path');
 const routes = require('./src/routes/index');
 // Import database configuration
 require('./src/config/database');
+// Import Firebase configuration
+require('./src/config/firebase');
 
 const init = async () => {
     const server = Hapi.server({
@@ -62,6 +64,18 @@ const init = async () => {
         handler: {
             directory: {
                 path: Path.join(__dirname, 'images/conjunctivas'),
+                listing: false
+            }
+        }
+    });
+
+    // Serve profile images
+    server.route({
+        method: 'GET',
+        path: '/profiles/{param*}',
+        handler: {
+            directory: {
+                path: Path.join(__dirname, 'images/profiles'),
                 listing: false
             }
         }

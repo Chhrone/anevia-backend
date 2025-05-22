@@ -7,6 +7,8 @@ A Node.js backend application for the Anevia eye conjunctiva scanning system for
 - [Features](#features)
 - [Tech Stack](#tech-stack)
 - [Prerequisites](#prerequisites)
+- [Database Schema](#database-schema)
+- [Authentication](#authentication)
 - [API Endpoints](#api-endpoints)
 - [Local Development Setup](#local-development-setup)
 - [AWS EC2 Deployment](#aws-ec2-deployment)
@@ -20,6 +22,9 @@ A Node.js backend application for the Anevia eye conjunctiva scanning system for
   1. Eye image cropping to extract conjunctiva
   2. Anemia detection from conjunctiva analysis
 - Store scan results in PostgreSQL database
+- User authentication with Firebase
+- Multiple authentication providers (Email/Password and Google)
+- User profile management
 - RESTful API for client applications
 
 ## Tech Stack
@@ -27,12 +32,72 @@ A Node.js backend application for the Anevia eye conjunctiva scanning system for
 - Node.js
 - Hapi.js framework
 - PostgreSQL database
+- Firebase Admin SDK for authentication
 - UUID for generating unique scan IDs
 
 ## Prerequisites
 
 - Node.js (v14 or higher)
 - PostgreSQL database
+- Firebase project with Authentication enabled
+
+## Database Schema
+
+### Scans Table
+```sql
+CREATE TABLE scans (
+  scan_id VARCHAR2(10) PRIMARY KEY,
+  photo_url VARCHAR2(50) NOT NULL,
+  scan_result BOOLEAN NOT NULL,
+  scan_date TIMESTAMP NOT NULL
+);
+```
+
+### Users Table
+```sql
+CREATE TABLE users (
+  uid VARCHAR(50) PRIMARY KEY,
+  username VARCHAR(50) NOT NULL UNIQUE,
+  email VARCHAR(100) NOT NULL UNIQUE,
+  password VARCHAR(50),
+  photo_url VARCHAR(100) DEFAULT '/profiles/default-profile.jpg',
+  birthdate DATE,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+## Authentication
+
+The application uses Firebase Authentication for user management with the following features:
+
+- Multiple sign-in methods:
+  - Email/Password
+  - Google OAuth
+- Provider linking (connect multiple auth methods to one account)
+- Token-based authentication
+- User profile management
+- Secure password handling
+
+### Authentication Flow
+
+1. User authenticates with Firebase (frontend) using Email/Password or Google
+2. Firebase returns an ID token to the frontend
+3. Frontend sends the token to the backend's `/auth/verify` endpoint
+4. Backend verifies the token using Firebase Admin SDK
+5. If valid, backend creates or retrieves user from PostgreSQL database
+6. Backend returns user profile data to frontend
+7. Frontend stores the token (typically in localStorage) for subsequent authenticated requests
+8. Frontend must handle token refresh as Firebase tokens expire after 1 hour
+
+For detailed implementation guidance, including code examples for frontend integration, refer to the web documentation. The documentation includes specific considerations for:
+
+- Firebase SDK integration
+- Token management and refresh
+- Authentication state monitoring
+- Making authenticated requests
+- Provider linking (adding email/password to OAuth accounts)
+
+A reference implementation is available in the `auth-test.html` file, which demonstrates all authentication features.
 
 ## Local Development Setup
 
@@ -54,22 +119,59 @@ A Node.js backend application for the Anevia eye conjunctiva scanning system for
    GRANT ALL PRIVILEGES ON DATABASE anevia_db TO anevia_admin;
    ```
 
-4. Create the required table:
+4. Create the required tables:
    ```sql
+   -- Scans table
    CREATE TABLE scans (
-     scan_id VARCHAR(10) PRIMARY KEY,
-     photo_url VARCHAR(255) NOT NULL,
+     scan_id VARCHAR2(10) PRIMARY KEY,
+     photo_url VARCHAR2(50) NOT NULL,
      scan_result BOOLEAN NOT NULL,
      scan_date TIMESTAMP NOT NULL
    );
+
+   -- Users table
+   CREATE TABLE users (
+    uid VARCHAR(50) PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    password VARCHAR(50),
+    photo_url VARCHAR(100) DEFAULT '/profiles/default-profile.jpg',
+    birthdate DATE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
    ```
 
-5. Create a `.env` file based on `.env.example`:
+5. Set up Firebase Authentication:
+   - Create a Firebase project at [Firebase Console](https://console.firebase.google.com/)
+   - Enable Email/Password and Google authentication providers
+   - Generate a service account key from Project Settings > Service Accounts
+   - Download the service account key JSON file
+
+6. Create a `.env` file based on `.env.example`:
    ```
    cp .env.example .env
    ```
 
-6. Start the development server:
+7. Configure your `.env` file with the following variables:
+   ```
+   # Server Configuration
+   PORT=5000
+   HOST=localhost
+
+   # PostgreSQL Configuration
+   PGUSER=anevia_admin
+   PGHOST=localhost
+   PGPASSWORD=your_secure_password
+   PGDATABASE=anevia_db
+   PGPORT=5432
+
+   # Firebase Configuration
+   FIREBASE_PROJECT_ID=your-project-id
+   FIREBASE_CLIENT_EMAIL=your-client-email@your-project-id.iam.gserviceaccount.com
+   FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nYour Private Key\n-----END PRIVATE KEY-----\n"
+   ```
+
+8. Start the development server:
    ```
    npm run dev
    ```
@@ -88,25 +190,27 @@ A Node.js backend application for the Anevia eye conjunctiva scanning system for
    cd anevia-backend
    ```
 
-4. Set up the database as described in the local setup
+4. Set up the database as described in the local setup (both scans and users tables)
 
-5. Install dependencies:
+5. Set up Firebase Authentication as described in the local setup
+
+6. Install dependencies:
    ```
    npm install
    ```
 
-6. Create a `.env` file with appropriate values:
+7. Create a `.env` file with appropriate values:
    ```
    cp .env.example .env
    nano .env  # Edit with your values
    ```
 
-7. Start the server:
+8. Start the server:
    ```
    npm start
    ```
 
-8. (Optional) Use PM2 to keep the application running:
+9. (Optional) Use PM2 to keep the application running:
    ```
    npm install -g pm2
    pm2 start server.js --name "anevia-backend"
@@ -116,7 +220,7 @@ A Node.js backend application for the Anevia eye conjunctiva scanning system for
 
 ### Option 2: Using the Deployment Script
 
-**Note:** This script assumes you already have a PostgreSQL database set up on your EC2 instance with the required 'scans' table. The script will NOT create or modify your database schema, only configure the connection.
+**Note:** This script assumes you already have a PostgreSQL database set up on your EC2 instance with the required 'scans' and 'users' tables. The script will NOT create or modify your database schema, only configure the connection.
 
 1. Clone the repository on your EC2 instance:
    ```
@@ -134,7 +238,7 @@ A Node.js backend application for the Anevia eye conjunctiva scanning system for
    ./deploy.sh
    ```
 
-4. Follow the prompts to configure your environment with your existing database credentials
+4. Follow the prompts to configure your environment with your existing database credentials and Firebase configuration
 
 ### Accessing the API on EC2
 
@@ -142,6 +246,7 @@ After deployment, the API will be accessible at:
 
 ```
 http://<Your EC2 Public IP>:5000/api/scans
+http://<Your EC2 Public IP>:5000/auth/verify
 ```
 
 For better accessibility, consider:
@@ -149,200 +254,6 @@ For better accessibility, consider:
 1. Setting up a domain name using AWS Route 53 or another DNS provider
 2. Configuring HTTPS using a service like Let's Encrypt
 3. Setting up a reverse proxy like Nginx to handle SSL termination and serve the API on port 80/443
-
-## API Endpoints
-
-### POST /api/scans
-
-Upload an eye conjunctiva image for anemia detection.
-
-**Request:**
-- Method: POST
-- Content-Type: multipart/form-data
-- Body:
-  - image: File (image)
-
-**Constraints:**
-- Maximum file size: 10MB
-- Accepted file types: jpg, jpeg, png
-
-**Processing Flow:**
-1. Original eye image is saved to `/images/scans/scan-{scanId}.jpg`
-2. Eye cropping AI model extracts the conjunctiva region
-3. Cropped conjunctiva is saved to `/images/conjunctivas/conj-{scanId}.jpg`
-4. Anemia detection AI model analyzes the conjunctiva image
-5. Results are stored in the database and returned to the client
-
-**Success Response (201 Created):**
-```json
-{
-  "status": "success",
-  "message": "Image uploaded successfully",
-  "data": {
-    "scanId": "a1b2c3d4",
-    "photoUrl": "/scans/scan-a1b2c3d4.jpg",
-    "scanResult": true,
-    "scanDate": "2023-05-20T12:34:56.789Z"
-  }
-}
-```
-
-**Error Responses:**
-
-- **400 Bad Request**
-```json
-{
-  "status": "fail",
-  "message": "Invalid file format or request"
-}
-```
-
-- **413 Payload Too Large**
-```json
-{
-  "status": "fail",
-  "message": "File size exceeds the 10MB limit"
-}
-```
-
-- **500 Internal Server Error**
-```json
-{
-  "status": "error",
-  "message": "Server error while uploading scan"
-}
-```
-
-### GET /api/scans
-
-Retrieve a list of all scans.
-
-**Request:**
-- Method: GET
-
-**Success Response (200 OK):**
-```json
-{
-  "error": false,
-  "message": "Scans fetched successfully",
-  "listScans": [
-    {
-      "scanId": "a1b2c3d4",
-      "photoUrl": "/scans/scan-a1b2c3d4.jpg",
-      "scanResult": true,
-      "scanDate": "2023-05-20T12:34:56.789Z"
-    },
-    {
-      "scanId": "e5f6g7h8",
-      "photoUrl": "/scans/scan-e5f6g7h8.jpg",
-      "scanResult": false,
-      "scanDate": "2023-05-19T10:24:36.123Z"
-    }
-  ]
-}
-```
-
-**Error Response:**
-- **500 Internal Server Error**
-```json
-{
-  "error": true,
-  "message": "Failed to fetch scans"
-}
-```
-
-### GET /api/scans/{id}
-
-Retrieve a specific scan by ID.
-
-**Request:**
-- Method: GET
-- URL Parameters:
-  - id: The scan ID to retrieve
-
-**Success Response (200 OK):**
-```json
-{
-  "error": false,
-  "message": "Scan fetched successfully",
-  "scan": {
-    "scanId": "a1b2c3d4",
-    "photoUrl": "/scans/scan-a1b2c3d4.jpg",
-    "scanResult": true,
-    "scanDate": "2023-05-20T12:34:56.789Z"
-  }
-}
-```
-
-**Error Responses:**
-
-- **404 Not Found**
-```json
-{
-  "error": true,
-  "message": "Scan with ID a1b2c3d4 not found"
-}
-```
-
-- **500 Internal Server Error**
-```json
-{
-  "error": true,
-  "message": "Failed to fetch scan"
-}
-```
-
-## Testing
-
-You can test the API using tools like Postman, cURL, or any HTTP client that can send multipart/form-data requests to the `/api/scans` endpoint.
-
-### Example cURL commands:
-
-#### POST /api/scans (Upload a scan):
-
-**Local testing:**
-```bash
-curl -X POST \
-  http://localhost:5000/api/scans \
-  -H 'Content-Type: multipart/form-data' \
-  -F 'image=@/path/to/your/image.jpg'
-```
-
-**EC2 testing:**
-```bash
-curl -X POST \
-  http://<Your EC2 Public IP>:5000/api/scans \
-  -H 'Content-Type: multipart/form-data' \
-  -F 'image=@/path/to/your/image.jpg'
-```
-
-Replace `/path/to/your/image.jpg` with the actual path to an image file on your system.
-
-#### GET /api/scans (Get all scans):
-
-**Local testing:**
-```bash
-curl -X GET http://localhost:5000/api/scans
-```
-
-**EC2 testing:**
-```bash
-curl -X GET http://<Your EC2 Public IP>:5000/api/scans
-```
-
-#### GET /api/scans/{id} (Get scan by ID):
-
-**Local testing:**
-```bash
-curl -X GET http://localhost:5000/api/scans/a1b2c3d4
-```
-
-**EC2 testing:**
-```bash
-curl -X GET http://<Your EC2 Public IP>:5000/api/scans/a1b2c3d4
-```
-
-Replace `a1b2c3d4` with the actual scan ID you want to retrieve.
 
 ## License
 

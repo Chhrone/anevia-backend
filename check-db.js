@@ -1,6 +1,7 @@
 const { Pool } = require('pg');
 require('dotenv').config();
 
+// Konfigurasi koneksi
 const pool = new Pool({
   user: process.env.DB_USER,
   host: process.env.DB_HOST,
@@ -9,46 +10,41 @@ const pool = new Pool({
   port: process.env.DB_PORT,
 });
 
-async function testConnection() {
+// Fungsi untuk memeriksa apakah sebuah tabel ada di skema public
+async function checkTableExists(tableName) {
+  const client = await pool.connect();
+
   try {
-    const client = await pool.connect();
-    console.log('Connected to database successfully');
-    
-    // Coba query sederhana
-    const res = await client.query('SELECT NOW()');
-    console.log('Database time:', res.rows[0]);
-    
-    // Cek apakah tabel scans ada
-    try {
-      const tablesRes = await client.query(`
-        SELECT EXISTS (
-          SELECT FROM information_schema.tables 
-          WHERE table_schema = 'public' 
-          AND table_name = 'scans'
-        );
-      `);
-      console.log('Table "scans" exists:', tablesRes.rows[0].exists);
-      
-      if (tablesRes.rows[0].exists) {
-        // Cek struktur tabel
-        const columnsRes = await client.query(`
-          SELECT column_name, data_type 
-          FROM information_schema.columns 
-          WHERE table_schema = 'public' 
-          AND table_name = 'scans';
-        `);
-        console.log('Table structure:', columnsRes.rows);
-      }
-    } catch (err) {
-      console.error('Error checking table:', err);
-    }
-    
-    client.release();
+    const res = await client.query(
+      `SELECT EXISTS (
+        SELECT FROM pg_tables
+        WHERE schemaname = 'public' AND tablename = $1
+      );`,
+      [tableName]
+    );
+
+    const exists = res.rows[0].exists;
+    console.log(`Tabel '${tableName}' ${exists ? 'ditemukan' : 'TIDAK ditemukan'} di database.`);
+    return exists;
   } catch (err) {
-    console.error('Error connecting to database:', err);
+    console.error(`Terjadi kesalahan saat mengecek tabel '${tableName}':`, err.message);
+    return false;
   } finally {
-    pool.end();
+    client.release();
   }
 }
 
-testConnection();
+// Jalankan pengecekan untuk beberapa tabel
+async function main() {
+  const tablesToCheck = ['users', 'scans']; // tambahkan tabel lain jika perlu
+
+  for (const table of tablesToCheck) {
+    await checkTableExists(table);
+  }
+
+  // Tutup koneksi pool setelah selesai
+  await pool.end();
+}
+
+// Jalankan
+main();

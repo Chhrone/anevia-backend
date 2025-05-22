@@ -181,6 +181,11 @@ main {
     font-size: 0.9rem;
 }
 
+.sidenav .sub-sub-item {
+    padding-left: 30px;
+    font-size: 0.85rem;
+}
+
 .content-area {
     flex: 1;
 }

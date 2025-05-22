@@ -24,9 +24,17 @@
                 <ul>
                     <li><a href="#overview">API Overview</a></li>
                     <li><a href="#endpoints">API Endpoints</a></li>
-                    <li class="sub-item"><a href="#post-scans">POST /api/scans</a></li>
-                    <li class="sub-item"><a href="#get-scans">GET /api/scans</a></li>
-                    <li class="sub-item"><a href="#get-scan-by-id">GET /api/scans/{id}</a></li>
+                    <li class="sub-item"><a href="#scan-endpoints">Scan Endpoints</a></li>
+                    <li class="sub-item sub-sub-item"><a href="#post-scans">POST /api/scans</a></li>
+                    <li class="sub-item sub-sub-item"><a href="#get-scans">GET /api/scans</a></li>
+                    <li class="sub-item sub-sub-item"><a href="#get-scan-by-id">GET /api/scans/{id}</a></li>
+                    <li class="sub-item"><a href="#auth-endpoints">Authentication Endpoints</a></li>
+                    <li class="sub-item sub-sub-item"><a href="#post-auth-verify">POST /auth/verify</a></li>
+                    <li class="sub-item sub-sub-item"><a href="#get-auth-profile">GET /auth/profile/{uid}</a></li>
+                    <li class="sub-item sub-sub-item"><a href="#put-auth-profile">PUT /auth/profile/{uid}</a></li>
+                    <li class="sub-item sub-sub-item"><a href="#post-auth-profile-image">POST /auth/profile/{uid}/image</a></li>
+                    <li class="sub-item sub-sub-item"><a href="#delete-auth-profile">DELETE /auth/profile/{uid}</a></li>
+                    <li class="sub-item sub-sub-item"><a href="#post-auth-profile-link-password">POST /auth/profile/{uid}/link-password</a></li>
                 </ul>
             </div>
         </aside>
@@ -46,50 +54,53 @@
             <section id="endpoints" class="endpoints">
                 <h2>API Endpoints</h2>
 
-            <div class="endpoint" id="post-scans">
-                <div class="endpoint-header">
-                    <span class="method post">POST</span>
-                    <span class="path">/api/scans</span>
-                </div>
-                <div class="endpoint-content">
-                    <h3>Upload Eye Image for Anemia Detection</h3>
-                    <p>
-                        Upload an eye conjunctiva image for anemia detection. The image will be processed
-                        through a two-step AI model: first to extract the conjunctiva region, then to
-                        analyze it for anemia detection.
-                    </p>
+                <h3 id="scan-endpoints">Scan Endpoints</h3>
+                <p>Endpoints for uploading and retrieving eye conjunctiva scans for anemia detection.</p>
 
-                    <div class="subsection">
-                        <h4>Request</h4>
-                        <p><strong>Content-Type:</strong> <code>multipart/form-data</code></p>
-                        <p><strong>Body:</strong></p>
-                        <ul>
-                            <li><code>image</code>: File (image)</li>
-                        </ul>
+                <div class="endpoint" id="post-scans">
+                    <div class="endpoint-header">
+                        <span class="method post">POST</span>
+                        <span class="path">/api/scans</span>
                     </div>
+                    <div class="endpoint-content">
+                        <h3>Upload Eye Image for Anemia Detection</h3>
+                        <p>
+                            Upload an eye conjunctiva image for anemia detection. The image will be processed
+                            through a two-step AI model: first to extract the conjunctiva region, then to
+                            analyze it for anemia detection.
+                        </p>
 
-                    <div class="subsection">
-                        <h4>Constraints</h4>
-                        <ul>
-                            <li>Maximum file size: 10MB</li>
-                            <li>Accepted file types: jpg, jpeg, png</li>
-                        </ul>
-                    </div>
+                        <div class="subsection">
+                            <h4>Request</h4>
+                            <p><strong>Content-Type:</strong> <code>multipart/form-data</code></p>
+                            <p><strong>Body:</strong></p>
+                            <ul>
+                                <li><code>image</code>: File (image)</li>
+                            </ul>
+                        </div>
 
-                    <div class="subsection">
-                        <h4>Processing Flow</h4>
-                        <ol>
-                            <li>Original eye image is saved to <code>/images/scans/scan-{scanId}.jpg</code></li>
-                            <li>Eye cropping AI model extracts the conjunctiva region</li>
-                            <li>Cropped conjunctiva is saved to <code>/images/conjunctivas/conj-{scanId}.jpg</code></li>
-                            <li>Anemia detection AI model analyzes the conjunctiva image</li>
-                            <li>Results are stored in the database and returned to the client</li>
-                        </ol>
-                    </div>
+                        <div class="subsection">
+                            <h4>Constraints</h4>
+                            <ul>
+                                <li>Maximum file size: 10MB</li>
+                                <li>Accepted file types: jpg, jpeg, png</li>
+                            </ul>
+                        </div>
 
-                    <div class="subsection">
-                        <h4>Success Response (201 Created)</h4>
-                        <pre><code>{
+                        <div class="subsection">
+                            <h4>Processing Flow</h4>
+                            <ol>
+                                <li>Original eye image is saved to <code>/images/scans/scan-{scanId}.jpg</code></li>
+                                <li>Eye cropping AI model extracts the conjunctiva region</li>
+                                <li>Cropped conjunctiva is saved to <code>/images/conjunctivas/conj-{scanId}.jpg</code></li>
+                                <li>Anemia detection AI model analyzes the conjunctiva image</li>
+                                <li>Results are stored in the database and returned to the client</li>
+                            </ol>
+                        </div>
+
+                        <div class="subsection">
+                            <h4>Success Response (201 Created)</h4>
+                            <pre><code>{
   "status": "success",
   "message": "Image uploaded successfully",
   "data": {
@@ -99,47 +110,24 @@
     "scanDate": "2023-05-20T12:34:56.789Z"
   }
 }</code></pre>
-                    </div>
-
-                    <div class="subsection">
-                        <h4>Error Responses</h4>
-                        <p><strong>400 Bad Request</strong></p>
-                        <pre><code>{
-  "status": "fail",
-  "message": "No image uploaded"
-}</code></pre>
-                        <p><strong>500 Internal Server Error</strong></p>
-                        <pre><code>{
-  "status": "error",
-  "message": "An error occurred while uploading the image"
-}</code></pre>
-                    </div>
-
-                    <div class="subsection">
-                        <h4>Example</h4>
-                        <p>Using cURL:</p>
-                        <pre><code>curl -X POST \
-  https://server.anevia.my.id/api/scans \
-  -H 'Content-Type: multipart/form-data' \
-  -F 'image=@/path/to/your/image.jpg'</code></pre>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="endpoint" id="get-scans">
-                <div class="endpoint-header">
-                    <span class="method get">GET</span>
-                    <span class="path">/api/scans</span>
-                </div>
-                <div class="endpoint-content">
-                    <h3>Get All Scans</h3>
-                    <p>
-                        Retrieve a list of all scans in the system, ordered by scan date (newest first).
-                    </p>
+                <div class="endpoint" id="get-scans">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/api/scans</span>
+                    </div>
+                    <div class="endpoint-content">
+                        <h3>Get All Scans</h3>
+                        <p>
+                            Retrieve a list of all scans in the system, ordered by scan date (newest first).
+                        </p>
 
-                    <div class="subsection">
-                        <h4>Success Response (200 OK)</h4>
-                        <pre><code>{
+                        <div class="subsection">
+                            <h4>Success Response (200 OK)</h4>
+                            <pre><code>{
   "error": false,
   "message": "Scans fetched successfully",
   "listScans": [
@@ -157,47 +145,32 @@
     }
   ]
 }</code></pre>
-                    </div>
-
-                    <div class="subsection">
-                        <h4>Error Response</h4>
-                        <p><strong>500 Internal Server Error</strong></p>
-                        <pre><code>{
-  "error": true,
-  "message": "Failed to fetch scans"
-}</code></pre>
-                    </div>
-
-                    <div class="subsection">
-                        <h4>Example</h4>
-                        <p>Using cURL:</p>
-                        <pre><code>curl -X GET https://server.anevia.my.id/api/scans</code></pre>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="endpoint" id="get-scan-by-id">
-                <div class="endpoint-header">
-                    <span class="method get">GET</span>
-                    <span class="path">/api/scans/{id}</span>
-                </div>
-                <div class="endpoint-content">
-                    <h3>Get Scan by ID</h3>
-                    <p>
-                        Retrieve a specific scan by its ID.
-                    </p>
-
-                    <div class="subsection">
-                        <h4>Parameters</h4>
-                        <p><strong>URL Parameters:</strong></p>
-                        <ul>
-                            <li><code>id</code>: The scan ID to retrieve</li>
-                        </ul>
+                <div class="endpoint" id="get-scan-by-id">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/api/scans/{id}</span>
                     </div>
+                    <div class="endpoint-content">
+                        <h3>Get Scan by ID</h3>
+                        <p>
+                            Retrieve a specific scan by its ID.
+                        </p>
 
-                    <div class="subsection">
-                        <h4>Success Response (200 OK)</h4>
-                        <pre><code>{
+                        <div class="subsection">
+                            <h4>Parameters</h4>
+                            <p><strong>URL Parameters:</strong></p>
+                            <ul>
+                                <li><code>id</code>: The scan ID to retrieve</li>
+                            </ul>
+                        </div>
+
+                        <div class="subsection">
+                            <h4>Success Response (200 OK)</h4>
+                            <pre><code>{
   "error": false,
   "message": "Scan fetched successfully",
   "scan": {
@@ -207,30 +180,404 @@
     "scanDate": "2023-05-20T12:34:56.789Z"
   }
 }</code></pre>
-                    </div>
-
-                    <div class="subsection">
-                        <h4>Error Responses</h4>
-                        <p><strong>404 Not Found</strong></p>
-                        <pre><code>{
-  "error": true,
-  "message": "Scan with ID a1b2c3d4 not found"
-}</code></pre>
-                        <p><strong>500 Internal Server Error</strong></p>
-                        <pre><code>{
-  "error": true,
-  "message": "Failed to fetch scan"
-}</code></pre>
-                    </div>
-
-                    <div class="subsection">
-                        <h4>Example</h4>
-                        <p>Using cURL:</p>
-                        <pre><code>curl -X GET https://server.anevia.my.id/api/scans/a1b2c3d4</code></pre>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </section>
+
+                <h3 id="auth-endpoints">Authentication Endpoints</h3>
+                <p>Endpoints for user authentication and profile management using Firebase Authentication.</p>
+
+                <div class="subsection">
+                    <h4>Authentication Flow</h4>
+                    <p>The authentication system uses Firebase Authentication on the frontend and Firebase Admin SDK on the backend. Here's the complete authentication flow:</p>
+
+                    <ol>
+                        <li><strong>Frontend Authentication:</strong> User authenticates directly with Firebase using one of the available providers (Email/Password or Google).</li>
+                        <li><strong>Token Generation:</strong> Upon successful authentication, Firebase provides an ID token to the frontend.</li>
+                        <li><strong>Token Verification:</strong> Frontend sends this token to the backend's <code>/auth/verify</code> endpoint.</li>
+                        <li><strong>Backend Verification:</strong> Backend verifies the token using Firebase Admin SDK.</li>
+                        <li><strong>User Creation/Retrieval:</strong> If the token is valid, the backend either creates a new user record in PostgreSQL (for first-time users) or retrieves the existing user data.</li>
+                        <li><strong>Response:</strong> Backend returns the user profile data to the frontend.</li>
+                        <li><strong>Session Management:</strong> Frontend stores the Firebase token (typically in localStorage) for subsequent authenticated requests.</li>
+                    </ol>
+                </div>
+
+                <div class="subsection">
+                    <h4>Frontend Implementation Considerations</h4>
+                    <p>When implementing Firebase Authentication in your frontend application, consider the following:</p>
+
+                    <ul>
+                        <li><strong>Firebase SDK Integration:</strong> Include the Firebase JavaScript SDK in your frontend application:
+                            <pre><code>// Install via npm
+npm install firebase
+
+// Or include via CDN
+&lt;script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-app.js"&gt;&lt;/script&gt;
+&lt;script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-auth.js"&gt;&lt;/script&gt;</code></pre>
+                        </li>
+                        <li><strong>Firebase Configuration:</strong> Initialize Firebase with your project configuration:
+                            <pre><code>// For Firebase JS SDK v9.x.x
+import { initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
+
+const firebaseConfig = {
+  apiKey: "your-api-key",
+  authDomain: "anevia-13e0d.firebaseapp.com",
+  projectId: "anevia-13e0d",
+  storageBucket: "anevia-13e0d.appspot.com",
+  messagingSenderId: "your-messaging-sender-id",
+  appId: "your-app-id"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);</code></pre>
+                        </li>
+                        <li><strong>Token Management:</strong> After authentication, get the ID token and send it to the backend:
+                            <pre><code>// After successful sign-in
+const user = auth.currentUser;
+const token = await user.getIdToken();
+
+// Send token to backend
+fetch('/auth/verify', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({ token })
+})
+.then(response => response.json())
+.then(data => {
+  // Store user data from backend
+  console.log(data.user);
+});</code></pre>
+                        </li>
+                        <li><strong>Token Refresh:</strong> Firebase tokens expire after 1 hour. Implement token refresh:
+                            <pre><code>// Set up a listener for token changes
+auth.onIdTokenChanged(async (user) => {
+  if (user) {
+    const token = await user.getIdToken();
+    // Store the new token
+    localStorage.setItem('firebaseToken', token);
+  } else {
+    // User is signed out
+    localStorage.removeItem('firebaseToken');
+  }
+});</code></pre>
+                        </li>
+                        <li><strong>Authentication State:</strong> Monitor authentication state changes:
+                            <pre><code>auth.onAuthStateChanged((user) => {
+  if (user) {
+    // User is signed in
+    console.log("User is signed in:", user.email);
+  } else {
+    // User is signed out
+    console.log("User is signed out");
+  }
+});</code></pre>
+                        </li>
+                        <li><strong>Authenticated Requests:</strong> Include the token in all authenticated API requests:
+                            <pre><code>// Example of making an authenticated request
+async function fetchUserProfile(uid) {
+  const token = localStorage.getItem('firebaseToken');
+
+  const response = await fetch(`/auth/profile/${uid}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  return response.json();
+}</code></pre>
+                        </li>
+                        <li><strong>Provider Linking:</strong> For accounts that sign in with OAuth providers (Google), you may want to add email/password authentication later:
+                            <pre><code>// Link email/password to an existing account
+async function linkEmailPassword(uid, password) {
+  const token = localStorage.getItem('firebaseToken');
+
+  const response = await fetch(`/auth/profile/${uid}/link-password`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ password })
+  });
+
+  return response.json();
+}</code></pre>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="subsection">
+                    <h4>Testing Authentication</h4>
+                    <p>You can use the included <code>auth-test.html</code> file as a reference implementation. This file demonstrates:</p>
+                    <ul>
+                        <li>Firebase initialization</li>
+                        <li>Email/Password registration and login</li>
+                        <li>Google OAuth login</li>
+                        <li>Token verification with the backend</li>
+                        <li>Profile management</li>
+                        <li>Provider linking</li>
+                    </ul>
+                </div>
+
+                <div class="endpoint" id="post-auth-verify">
+                    <div class="endpoint-header">
+                        <span class="method post">POST</span>
+                        <span class="path">/auth/verify</span>
+                    </div>
+                    <div class="endpoint-content">
+                        <h3>Verify Firebase Token</h3>
+                        <p>
+                            Verify Firebase token and sync user data with PostgreSQL database.
+                        </p>
+
+                        <div class="subsection">
+                            <h4>Request</h4>
+                            <p><strong>Content-Type:</strong> <code>application/json</code></p>
+                            <p><strong>Body:</strong></p>
+                            <ul>
+                                <li><code>token</code>: Firebase ID token</li>
+                            </ul>
+                        </div>
+
+                        <div class="subsection">
+                            <h4>Success Response (200 OK or 201 Created)</h4>
+                            <pre><code>{
+  "error": false,
+  "message": "User authenticated",
+  "user": {
+    "uid": "firebase-user-id",
+    "username": "johndoe",
+    "email": "john@example.com",
+    "photoUrl": "/profiles/photo-firebase-user-id.jpg",
+    "birthdate": "1990-01-01T00:00:00.000Z",
+    "createdAt": "2023-05-20T12:34:56.789Z"
+  }
+}</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="endpoint" id="get-auth-profile">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/auth/profile/{uid}</span>
+                    </div>
+                    <div class="endpoint-content">
+                        <h3>Get User Profile</h3>
+                        <p>
+                            Retrieve user profile information.
+                        </p>
+
+                        <div class="subsection">
+                            <h4>Request</h4>
+                            <p><strong>Headers:</strong></p>
+                            <ul>
+                                <li><code>Authorization</code>: Bearer {firebase-id-token}</li>
+                            </ul>
+                            <p><strong>URL Parameters:</strong></p>
+                            <ul>
+                                <li><code>uid</code>: Firebase user ID</li>
+                            </ul>
+                        </div>
+
+                        <div class="subsection">
+                            <h4>Success Response (200 OK)</h4>
+                            <pre><code>{
+  "error": false,
+  "message": "User profile retrieved successfully",
+  "user": {
+    "uid": "firebase-user-id",
+    "username": "johndoe",
+    "email": "john@example.com",
+    "photoUrl": "/profiles/photo-firebase-user-id.jpg",
+    "birthdate": "1990-01-01T00:00:00.000Z",
+    "createdAt": "2023-05-20T12:34:56.789Z"
+  }
+}</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="endpoint" id="put-auth-profile">
+                    <div class="endpoint-header">
+                        <span class="method put">PUT</span>
+                        <span class="path">/auth/profile/{uid}</span>
+                    </div>
+                    <div class="endpoint-content">
+                        <h3>Update User Profile</h3>
+                        <p>
+                            Update user profile information.
+                        </p>
+
+                        <div class="subsection">
+                            <h4>Request</h4>
+                            <p><strong>Headers:</strong></p>
+                            <ul>
+                                <li><code>Authorization</code>: Bearer {firebase-id-token}</li>
+                                <li><code>Content-Type</code>: application/json</li>
+                            </ul>
+                            <p><strong>URL Parameters:</strong></p>
+                            <ul>
+                                <li><code>uid</code>: Firebase user ID</li>
+                            </ul>
+                            <p><strong>Body:</strong></p>
+                            <ul>
+                                <li><code>username</code>: New username (required)</li>
+                                <li><code>birthdate</code>: New birthdate (optional)</li>
+                            </ul>
+                        </div>
+
+                        <div class="subsection">
+                            <h4>Success Response (200 OK)</h4>
+                            <pre><code>{
+  "error": false,
+  "message": "User profile updated successfully",
+  "user": {
+    "uid": "firebase-user-id",
+    "username": "new-username",
+    "email": "john@example.com",
+    "photoUrl": "/profiles/photo-firebase-user-id.jpg",
+    "birthdate": "1995-05-15T00:00:00.000Z",
+    "createdAt": "2023-05-20T12:34:56.789Z"
+  }
+}</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="endpoint" id="post-auth-profile-image">
+                    <div class="endpoint-header">
+                        <span class="method post">POST</span>
+                        <span class="path">/auth/profile/{uid}/image</span>
+                    </div>
+                    <div class="endpoint-content">
+                        <h3>Upload Profile Image</h3>
+                        <p>
+                            Upload a profile image for the user.
+                        </p>
+
+                        <div class="subsection">
+                            <h4>Request</h4>
+                            <p><strong>Headers:</strong></p>
+                            <ul>
+                                <li><code>Authorization</code>: Bearer {firebase-id-token}</li>
+                            </ul>
+                            <p><strong>Content-Type:</strong> <code>multipart/form-data</code></p>
+                            <p><strong>URL Parameters:</strong></p>
+                            <ul>
+                                <li><code>uid</code>: Firebase user ID</li>
+                            </ul>
+                            <p><strong>Body:</strong></p>
+                            <ul>
+                                <li><code>image</code>: File (image)</li>
+                            </ul>
+                        </div>
+
+                        <div class="subsection">
+                            <h4>Success Response (200 OK)</h4>
+                            <pre><code>{
+  "error": false,
+  "message": "Profile image uploaded successfully",
+  "user": {
+    "uid": "firebase-user-id",
+    "username": "johndoe",
+    "email": "john@example.com",
+    "photoUrl": "/profiles/photo-firebase-user-id.jpg",
+    "birthdate": "1990-01-01T00:00:00.000Z",
+    "createdAt": "2023-05-20T12:34:56.789Z"
+  }
+}</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="endpoint" id="delete-auth-profile">
+                    <div class="endpoint-header">
+                        <span class="method delete">DELETE</span>
+                        <span class="path">/auth/profile/{uid}</span>
+                    </div>
+                    <div class="endpoint-content">
+                        <h3>Delete User Profile</h3>
+                        <p>
+                            Delete user profile (both from PostgreSQL and Firebase).
+                        </p>
+
+                        <div class="subsection">
+                            <h4>Request</h4>
+                            <p><strong>Headers:</strong></p>
+                            <ul>
+                                <li><code>Authorization</code>: Bearer {firebase-id-token}</li>
+                            </ul>
+                            <p><strong>URL Parameters:</strong></p>
+                            <ul>
+                                <li><code>uid</code>: Firebase user ID</li>
+                            </ul>
+                        </div>
+
+                        <div class="subsection">
+                            <h4>Success Response (200 OK)</h4>
+                            <pre><code>{
+  "error": false,
+  "message": "User profile deleted successfully",
+  "user": {
+    "uid": "firebase-user-id",
+    "username": "johndoe",
+    "email": "john@example.com"
+  }
+}</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="endpoint" id="post-auth-profile-link-password">
+                    <div class="endpoint-header">
+                        <span class="method post">POST</span>
+                        <span class="path">/auth/profile/{uid}/link-password</span>
+                    </div>
+                    <div class="endpoint-content">
+                        <h3>Link Email/Password Provider</h3>
+                        <p>
+                            Link email/password provider to existing account (for users who signed in with OAuth providers).
+                        </p>
+
+                        <div class="subsection">
+                            <h4>Request</h4>
+                            <p><strong>Headers:</strong></p>
+                            <ul>
+                                <li><code>Authorization</code>: Bearer {firebase-id-token}</li>
+                                <li><code>Content-Type</code>: application/json</li>
+                            </ul>
+                            <p><strong>URL Parameters:</strong></p>
+                            <ul>
+                                <li><code>uid</code>: Firebase user ID</li>
+                            </ul>
+                            <p><strong>Body:</strong></p>
+                            <ul>
+                                <li><code>password</code>: New password (min 6 characters)</li>
+                            </ul>
+                        </div>
+
+                        <div class="subsection">
+                            <h4>Success Response (200 OK)</h4>
+                            <pre><code>{
+  "error": false,
+  "message": "Email/password authentication added successfully",
+  "user": {
+    "uid": "firebase-user-id",
+    "username": "johndoe",
+    "email": "john@example.com",
+    "photoUrl": "/profiles/photo-firebase-user-id.jpg",
+    "birthdate": "1990-01-01T00:00:00.000Z",
+    "createdAt": "2023-05-20T12:34:56.789Z"
+  }
+}</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
         </div>
     </main>
 
