@@ -34,8 +34,8 @@ exports.verifyToken = async (request, h) => {
       if (!user) {
         // User doesn't exist in our database, create a new user
         try {
-          // Verify that the user exists in Firebase
-          await auth.getUser(uid);
+          // Verify that the user exists in Firebase and get provider information
+          const firebaseUser = await auth.getUser(uid);
 
           // Generate a username based on email or name
           const username = name || email.split('@')[0];
@@ -48,12 +48,22 @@ exports.verifyToken = async (request, h) => {
           // Otherwise, use default profile picture
           const photoUrl = picture ? picture : '/profiles/default-profile.jpg';
 
+          // Check if user authenticated with email/password provider
+          const hasPasswordProvider = firebaseUser.providerData.some(
+            provider => provider.providerId === 'password'
+          );
+
+          // Set password field based on authentication method
+          // For email/password users, we store a placeholder since Firebase doesn't provide the actual password
+          // For OAuth users (Google, GitHub), we store null
+          const passwordValue = hasPasswordProvider ? '[FIREBASE_MANAGED]' : null;
+
           // Create new user in our database
           user = await User.create({
             uid,
             username: username,
             email,
-            password: null, // Password is null for OAuth providers
+            password: passwordValue,
             photoUrl,
             birthdate: null,
             createdAt: new Date()
@@ -381,12 +391,12 @@ exports.linkEmailPassword = async (request, h) => {
 
       // Update the user in Firebase to add email/password provider
       await auth.updateUser(uid, {
-        email: user.email, 
+        email: user.email,
         password: password,
         emailVerified: true
       });
 
-      // Update the password in our database
+      // Update the password in our database with the actual password
       await User.updateProfile(uid, { password: password });
 
       return h.response({
@@ -479,7 +489,7 @@ exports.resetPassword = async (request, h) => {
         password: newPassword
       });
 
-      // Update the password in our database
+      // Update the password in our database with the new password
       await User.updateProfile(uid, { password: newPassword });
 
       return h.response({
