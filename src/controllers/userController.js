@@ -40,16 +40,8 @@ exports.verifyToken = async (request, h) => {
           // Generate a username based on email or name
           const username = name || email.split('@')[0];
 
-          // Check if username already exists and make it unique if needed
-          let uniqueUsername = username;
-          let userWithSameUsername = await User.findByUsername(uniqueUsername);
-          let counter = 1;
-
-          while (userWithSameUsername) {
-            uniqueUsername = `${username}${counter}`;
-            userWithSameUsername = await User.findByUsername(uniqueUsername);
-            counter++;
-          }
+          // No longer checking for username uniqueness as per requirement
+          // Using the original username directly
 
           // Determine photo URL
           // If user signed in with Google, use their Google profile picture
@@ -59,7 +51,7 @@ exports.verifyToken = async (request, h) => {
           // Create new user in our database
           user = await User.create({
             uid,
-            username: uniqueUsername,
+            username: username,
             email,
             password: null, // Password is null for OAuth providers
             photoUrl,
@@ -84,6 +76,7 @@ exports.verifyToken = async (request, h) => {
           if (createError.message.includes('duplicate key value') ||
               createError.code === '23505') { // PostgreSQL unique violation code
 
+            // This is likely due to duplicate email since username constraint has been removed
             // Try to fetch the user again - it might have been created in a concurrent request
             user = await User.findByUid(uid);
 
@@ -237,6 +230,16 @@ exports.updateUserProfile = async (request, h) => {
 
   } catch (error) {
     console.error('Error updating user profile:', error);
+
+    // Check if this is a duplicate key error (likely for email, as username uniqueness is now allowed)
+    if (error.message.includes('duplicate key value') || error.code === '23505') {
+      return h.response({
+        error: true,
+        message: 'Failed to update user profile due to duplicate email',
+        details: error.message
+      }).code(400);
+    }
+
     return h.response({
       error: true,
       message: 'Failed to update user profile',
@@ -378,9 +381,9 @@ exports.linkEmailPassword = async (request, h) => {
 
       // Update the user in Firebase to add email/password provider
       await auth.updateUser(uid, {
-        email: user.email, // Use the email from our database
+        email: user.email, 
         password: password,
-        emailVerified: true // Since we're linking to an existing verified account
+        emailVerified: true
       });
 
       // Update the password in our database
