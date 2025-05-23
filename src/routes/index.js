@@ -123,5 +123,21 @@ module.exports = [
             },
             handler: userController.linkEmailPassword
         }
+    },
+
+    // PUT endpoint to reset user password
+    {
+        method: 'PUT',
+        path: '/auth/profile/{uid}/reset-password',
+        options: {
+            pre: [
+                { method: verifyToken }
+            ],
+            payload: {
+                parse: true,
+                allow: 'application/json'
+            },
+            handler: userController.resetPassword
+        }
     }
 ];

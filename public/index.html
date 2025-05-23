@@ -23,18 +23,20 @@
                 <h3>Contents</h3>
                 <ul>
                     <li><a href="#overview">API Overview</a></li>
-                    <li><a href="#endpoints">API Endpoints</a></li>
-                    <li class="sub-item"><a href="#scan-endpoints">Scan Endpoints</a></li>
-                    <li class="sub-item sub-sub-item"><a href="#post-scans">POST /api/scans</a></li>
-                    <li class="sub-item sub-sub-item"><a href="#get-scans">GET /api/scans</a></li>
-                    <li class="sub-item sub-sub-item"><a href="#get-scan-by-id">GET /api/scans/{id}</a></li>
-                    <li class="sub-item"><a href="#auth-endpoints">Authentication Endpoints</a></li>
-                    <li class="sub-item sub-sub-item"><a href="#post-auth-verify">POST /auth/verify</a></li>
-                    <li class="sub-item sub-sub-item"><a href="#get-auth-profile">GET /auth/profile/{uid}</a></li>
-                    <li class="sub-item sub-sub-item"><a href="#put-auth-profile">PUT /auth/profile/{uid}</a></li>
-                    <li class="sub-item sub-sub-item"><a href="#post-auth-profile-image">POST /auth/profile/{uid}/image</a></li>
-                    <li class="sub-item sub-sub-item"><a href="#delete-auth-profile">DELETE /auth/profile/{uid}</a></li>
-                    <li class="sub-item sub-sub-item"><a href="#post-auth-profile-link-password">POST /auth/profile/{uid}/link-password</a></li>
+                    <li><a href="#scan-endpoints">Scan Endpoints</a></li>
+                    <li class="sub-item"><a href="#post-scans"><span class="method-label">POST</span> Upload Eye Image</a></li>
+                    <li class="sub-item"><a href="#get-scans"><span class="method-label">GET</span> Get All Scans</a></li>
+                    <li class="sub-item"><a href="#get-scan-by-id"><span class="method-label">GET</span> Get Scan by ID</a></li>
+                    <li><a href="#auth-endpoints">Authentication Endpoints</a></li>
+                    <li class="sub-item"><a href="#auth-flow">Authentication Flow</a></li>
+                    <li class="sub-item"><a href="#frontend-implementation">Frontend Auth Consideration</a></li>
+                    <li class="sub-item"><a href="#post-auth-verify"><span class="method-label">POST</span> Verify Firebase Token</a></li>
+                    <li class="sub-item"><a href="#post-auth-profile-image"><span class="method-label">POST</span> Upload Profile Image</a></li>
+                    <li class="sub-item"><a href="#post-auth-profile-link-password"><span class="method-label">POST</span> Link Email/Password</a></li>
+                    <li class="sub-item"><a href="#get-auth-profile"><span class="method-label">GET</span> Get User Profile</a></li>
+                    <li class="sub-item"><a href="#put-auth-profile"><span class="method-label">PUT</span> Update User Profile</a></li>
+                    <li class="sub-item"><a href="#put-auth-profile-reset-password"><span class="method-label">PUT</span> Reset User Password</a></li>
+                    <li class="sub-item"><a href="#delete-auth-profile"><span class="method-label">DELETE</span> Delete User Profile</a></li>
                 </ul>
             </div>
         </aside>
@@ -51,10 +53,8 @@
                 </div>
             </section>
 
-            <section id="endpoints" class="endpoints">
-                <h2>API Endpoints</h2>
-
-                <h3 id="scan-endpoints">Scan Endpoints</h3>
+            <section id="scan-endpoints" class="endpoints">
+                <h2>Scan Endpoints</h2>
                 <p>Endpoints for uploading and retrieving eye conjunctiva scans for anemia detection.</p>
 
                 <div class="endpoint" id="post-scans">
@@ -184,10 +184,13 @@
                     </div>
                 </div>
 
-                <h3 id="auth-endpoints">Authentication Endpoints</h3>
+            </section>
+
+            <section id="auth-endpoints" class="endpoints">
+                <h2>Authentication Endpoints</h2>
                 <p>Endpoints for user authentication and profile management using Firebase Authentication.</p>
 
-                <div class="subsection">
+                <div id="auth-flow" class="subsection">
                     <h4>Authentication Flow</h4>
                     <p>The authentication system uses Firebase Authentication on the frontend and Firebase Admin SDK on the backend. Here's the complete authentication flow:</p>
 
@@ -202,8 +205,8 @@
                     </ol>
                 </div>
 
-                <div class="subsection">
-                    <h4>Frontend Implementation Considerations</h4>
+                <div id="frontend-implementation" class="subsection">
+                    <h4>Frontend Auth Consideration</h4>
                     <p>When implementing Firebase Authentication in your frontend application, consider the following:</p>
 
                     <ul>
@@ -309,18 +312,7 @@ async function linkEmailPassword(uid, password) {
                     </ul>
                 </div>
 
-                <div class="subsection">
-                    <h4>Testing Authentication</h4>
-                    <p>You can use the included <code>auth-test.html</code> file as a reference implementation. This file demonstrates:</p>
-                    <ul>
-                        <li>Firebase initialization</li>
-                        <li>Email/Password registration and login</li>
-                        <li>Google OAuth login</li>
-                        <li>Token verification with the backend</li>
-                        <li>Profile management</li>
-                        <li>Provider linking</li>
-                    </ul>
-                </div>
+
 
                 <div class="endpoint" id="post-auth-verify">
                     <div class="endpoint-header">
@@ -347,6 +339,98 @@ async function linkEmailPassword(uid, password) {
                             <pre><code>{
   "error": false,
   "message": "User authenticated",
+  "user": {
+    "uid": "firebase-user-id",
+    "username": "johndoe",
+    "email": "john@example.com",
+    "photoUrl": "/profiles/photo-firebase-user-id.jpg",
+    "birthdate": "1990-01-01T00:00:00.000Z",
+    "createdAt": "2023-05-20T12:34:56.789Z"
+  }
+}</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="endpoint" id="post-auth-profile-image">
+                    <div class="endpoint-header">
+                        <span class="method post">POST</span>
+                        <span class="path">/auth/profile/{uid}/image</span>
+                    </div>
+                    <div class="endpoint-content">
+                        <h3>Upload Profile Image</h3>
+                        <p>
+                            Upload a profile image for the user.
+                        </p>
+
+                        <div class="subsection">
+                            <h4>Request</h4>
+                            <p><strong>Headers:</strong></p>
+                            <ul>
+                                <li><code>Authorization</code>: Bearer {firebase-id-token}</li>
+                            </ul>
+                            <p><strong>Content-Type:</strong> <code>multipart/form-data</code></p>
+                            <p><strong>URL Parameters:</strong></p>
+                            <ul>
+                                <li><code>uid</code>: Firebase user ID</li>
+                            </ul>
+                            <p><strong>Body:</strong></p>
+                            <ul>
+                                <li><code>image</code>: File (image)</li>
+                            </ul>
+                        </div>
+
+                        <div class="subsection">
+                            <h4>Success Response (200 OK)</h4>
+                            <pre><code>{
+  "error": false,
+  "message": "Profile image uploaded successfully",
+  "user": {
+    "uid": "firebase-user-id",
+    "username": "johndoe",
+    "email": "john@example.com",
+    "photoUrl": "/profiles/photo-firebase-user-id.jpg",
+    "birthdate": "1990-01-01T00:00:00.000Z",
+    "createdAt": "2023-05-20T12:34:56.789Z"
+  }
+}</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="endpoint" id="post-auth-profile-link-password">
+                    <div class="endpoint-header">
+                        <span class="method post">POST</span>
+                        <span class="path">/auth/profile/{uid}/link-password</span>
+                    </div>
+                    <div class="endpoint-content">
+                        <h3>Link Email/Password Provider</h3>
+                        <p>
+                            Link email/password provider to existing account (for users who signed in with OAuth providers).
+                        </p>
+
+                        <div class="subsection">
+                            <h4>Request</h4>
+                            <p><strong>Headers:</strong></p>
+                            <ul>
+                                <li><code>Authorization</code>: Bearer {firebase-id-token}</li>
+                                <li><code>Content-Type</code>: application/json</li>
+                            </ul>
+                            <p><strong>URL Parameters:</strong></p>
+                            <ul>
+                                <li><code>uid</code>: Firebase user ID</li>
+                            </ul>
+                            <p><strong>Body:</strong></p>
+                            <ul>
+                                <li><code>password</code>: New password (min 6 characters)</li>
+                            </ul>
+                        </div>
+
+                        <div class="subsection">
+                            <h4>Success Response (200 OK)</h4>
+                            <pre><code>{
+  "error": false,
+  "message": "Email/password authentication added successfully",
   "user": {
     "uid": "firebase-user-id",
     "username": "johndoe",
@@ -448,15 +532,15 @@ async function linkEmailPassword(uid, password) {
                     </div>
                 </div>
 
-                <div class="endpoint" id="post-auth-profile-image">
+                <div class="endpoint" id="put-auth-profile-reset-password">
                     <div class="endpoint-header">
-                        <span class="method post">POST</span>
-                        <span class="path">/auth/profile/{uid}/image</span>
+                        <span class="method put">PUT</span>
+                        <span class="path">/auth/profile/{uid}/reset-password</span>
                     </div>
                     <div class="endpoint-content">
-                        <h3>Upload Profile Image</h3>
+                        <h3>Reset User Password</h3>
                         <p>
-                            Upload a profile image for the user.
+                            Reset the password for a user with email/password authentication.
                         </p>
 
                         <div class="subsection">
@@ -464,15 +548,15 @@ async function linkEmailPassword(uid, password) {
                             <p><strong>Headers:</strong></p>
                             <ul>
                                 <li><code>Authorization</code>: Bearer {firebase-id-token}</li>
+                                <li><code>Content-Type</code>: application/json</li>
                             </ul>
-                            <p><strong>Content-Type:</strong> <code>multipart/form-data</code></p>
                             <p><strong>URL Parameters:</strong></p>
                             <ul>
                                 <li><code>uid</code>: Firebase user ID</li>
                             </ul>
                             <p><strong>Body:</strong></p>
                             <ul>
-                                <li><code>image</code>: File (image)</li>
+                                <li><code>newPassword</code>: New password (min 6 characters)</li>
                             </ul>
                         </div>
 
@@ -480,7 +564,7 @@ async function linkEmailPassword(uid, password) {
                             <h4>Success Response (200 OK)</h4>
                             <pre><code>{
   "error": false,
-  "message": "Profile image uploaded successfully",
+  "message": "Password reset successfully",
   "user": {
     "uid": "firebase-user-id",
     "username": "johndoe",
@@ -526,52 +610,6 @@ async function linkEmailPassword(uid, password) {
     "uid": "firebase-user-id",
     "username": "johndoe",
     "email": "john@example.com"
-  }
-}</code></pre>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="endpoint" id="post-auth-profile-link-password">
-                    <div class="endpoint-header">
-                        <span class="method post">POST</span>
-                        <span class="path">/auth/profile/{uid}/link-password</span>
-                    </div>
-                    <div class="endpoint-content">
-                        <h3>Link Email/Password Provider</h3>
-                        <p>
-                            Link email/password provider to existing account (for users who signed in with OAuth providers).
-                        </p>
-
-                        <div class="subsection">
-                            <h4>Request</h4>
-                            <p><strong>Headers:</strong></p>
-                            <ul>
-                                <li><code>Authorization</code>: Bearer {firebase-id-token}</li>
-                                <li><code>Content-Type</code>: application/json</li>
-                            </ul>
-                            <p><strong>URL Parameters:</strong></p>
-                            <ul>
-                                <li><code>uid</code>: Firebase user ID</li>
-                            </ul>
-                            <p><strong>Body:</strong></p>
-                            <ul>
-                                <li><code>password</code>: New password (min 6 characters)</li>
-                            </ul>
-                        </div>
-
-                        <div class="subsection">
-                            <h4>Success Response (200 OK)</h4>
-                            <pre><code>{
-  "error": false,
-  "message": "Email/password authentication added successfully",
-  "user": {
-    "uid": "firebase-user-id",
-    "username": "johndoe",
-    "email": "john@example.com",
-    "photoUrl": "/profiles/photo-firebase-user-id.jpg",
-    "birthdate": "1990-01-01T00:00:00.000Z",
-    "createdAt": "2023-05-20T12:34:56.789Z"
   }
 }</code></pre>
                         </div>

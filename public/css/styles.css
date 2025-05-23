@@ -114,7 +114,7 @@ main {
 }
 
 .sidenav {
-    width: 250px;
+    width: 320px;
     flex-shrink: 0;
 }
 
@@ -150,7 +150,10 @@ main {
     padding: 5px 0;
     color: var(--text-color);
     text-decoration: none;
-    transition: color 0.2s;
+    transition: all 0.2s ease;
+    border-left: 2px solid transparent;
+    padding-left: 5px;
+    font-size: 0.95rem;
 }
 
 .sidenav a:hover {
@@ -158,32 +161,41 @@ main {
     text-decoration: none;
 }
 
-.sidenav a.active {
+/* Active state styling for main section links */
+.sidenav li > a.active-section {
     color: var(--primary-color);
     font-weight: 600;
-    position: relative;
+    border-left: 3px solid var(--primary-color);
+    padding-left: 7px;
+    background-color: rgba(41, 122, 254, 0.05);
+    border-radius: 0 4px 4px 0;
 }
 
-.sidenav a.active::before {
-    content: '';
-    position: absolute;
-    left: -10px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 4px;
-    height: 16px;
-    background-color: var(--primary-color);
-    border-radius: 2px;
+/* Active state styling for sub-items */
+.sidenav .sub-item > a.active-endpoint {
+    color: var(--primary-color);
+    font-weight: 500;
 }
 
 .sidenav .sub-item {
-    padding-left: 15px;
     font-size: 0.9rem;
 }
 
-.sidenav .sub-sub-item {
-    padding-left: 30px;
-    font-size: 0.85rem;
+.sidenav .sub-item a {
+    padding-left: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Removed hover padding effect */
+
+/* Method labels in sidebar - plain style */
+.method-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    min-width: 40px;
+    font-family: var(--font-code);
 }
 
 .content-area {

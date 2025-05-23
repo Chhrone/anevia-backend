@@ -423,6 +423,89 @@ exports.linkEmailPassword = async (request, h) => {
   }
 };
 
+// Reset user password
+exports.resetPassword = async (request, h) => {
+  try {
+    const { uid } = request.params;
+    const { newPassword } = request.payload;
+
+    // Check if the requesting user is authorized to reset this password
+    if (request.user.uid !== uid) {
+      return h.response({
+        error: true,
+        message: 'Unauthorized: You can only reset your own password'
+      }).code(403);
+    }
+
+    // Validate input
+    if (!newPassword || newPassword.length < 6) {
+      return h.response({
+        error: true,
+        message: 'New password is required and must be at least 6 characters'
+      }).code(400);
+    }
+
+    // Get the user from our database
+    const user = await User.findByUid(uid);
+
+    if (!user) {
+      return h.response({
+        error: true,
+        message: 'User not found'
+      }).code(404);
+    }
+
+    try {
+      // Get the user from Firebase to check current providers
+      const firebaseUser = await auth.getUser(uid);
+
+      // Check if the user has email/password provider
+      const hasPasswordProvider = firebaseUser.providerData.some(
+        provider => provider.providerId === 'password'
+      );
+
+      if (!hasPasswordProvider) {
+        return h.response({
+          error: true,
+          message: 'User does not have email/password authentication to reset'
+        }).code(400);
+      }
+
+      // Update the user's password in Firebase
+      await auth.updateUser(uid, {
+        password: newPassword
+      });
+
+      // Update the password in our database
+      await User.updateProfile(uid, { password: newPassword });
+
+      return h.response({
+        error: false,
+        message: 'Password reset successfully',
+        user: {
+          uid: user.uid,
+          username: user.username,
+          email: user.email,
+          photoUrl: user.photoUrl,
+          birthdate: user.birthdate,
+          createdAt: user.createdAt
+        }
+      }).code(200);
+    } catch (firebaseError) {
+      console.error('Error resetting password in Firebase:', firebaseError);
+      throw firebaseError;
+    }
+
+  } catch (error) {
+    console.error('Error resetting password:', error);
+    return h.response({
+      error: true,
+      message: 'Failed to reset password',
+      details: error.message
+    }).code(500);
+  }
+};
+
 // Delete user profile
 exports.deleteUserProfile = async (request, h) => {
   try {
