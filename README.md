@@ -1,53 +1,94 @@
 # Anevia Backend
 
-A Node.js backend application for the Anevia eye conjunctiva scanning system for anemia detection.
+<div align="center">
+  <img src="public/images/logo.png" alt="Anevia Logo" width="200"/>
+  <h3>Eye Conjunctiva Scanning System for Anemia Detection</h3>
+</div>
 
-## Table of Contents
+Anevia is an innovative healthcare solution that uses AI-powered image analysis to detect potential anemia through eye conjunctiva scans. This repository contains the backend API that powers the Anevia platform.
 
+## 📚 Table of Contents
+
+- [Overview](#overview)
 - [Features](#features)
 - [Tech Stack](#tech-stack)
+- [API Documentation](#api-documentation)
 - [Prerequisites](#prerequisites)
 - [Database Schema](#database-schema)
-- [Authentication](#authentication)
-- [API Endpoints](#api-endpoints)
+- [Authentication System](#authentication-system)
 - [Local Development Setup](#local-development-setup)
 - [AWS EC2 Deployment](#aws-ec2-deployment)
-- [Testing](#testing)
 - [License](#license)
 
-## Features
+## 🔍 Overview
 
-- Upload and process eye conjunctiva images
-- Two-step AI processing:
-  1. Eye image cropping to extract conjunctiva
-  2. Anemia detection from conjunctiva analysis
-- Store scan results in PostgreSQL database
-- User authentication with Firebase
-- Multiple authentication providers (Email/Password and Google)
-- User profile management
-- RESTful API for client applications
+Anevia's backend provides a robust API for processing eye conjunctiva images to detect potential anemia. The system uses a two-step AI model approach:
 
-## Tech Stack
+1. **Eye Region Extraction**: Identifies and crops the conjunctiva region from uploaded eye images
+2. **Anemia Analysis**: Analyzes the extracted conjunctiva to determine potential anemia indicators
 
-- Node.js
-- Hapi.js framework
-- PostgreSQL database
-- Firebase Admin SDK for authentication
-- UUID for generating unique scan IDs
+The backend also handles user authentication, profile management, and scan history storage.
 
-## Prerequisites
+## ✨ Features
 
-- Node.js (v14 or higher)
-- PostgreSQL database
-- Firebase project with Authentication enabled
+- **AI-Powered Image Analysis**:
+  - Upload and process eye conjunctiva images
+  - Two-step AI processing pipeline
+  - Accurate anemia detection from conjunctiva analysis
 
-## Database Schema
+- **User Management**:
+  - Secure authentication with Firebase
+  - Multiple authentication providers (Email/Password, Google, and GitHub)
+  - Provider linking capabilities
+  - Comprehensive user profile management
+
+- **Data Storage**:
+  - Efficient PostgreSQL database integration
+  - Secure storage of scan results and user data
+  - Image file management
+
+- **RESTful API**:
+  - Well-documented endpoints
+  - Token-based authentication
+  - Comprehensive error handling
+
+## 🛠️ Tech Stack
+
+- **Backend**: Node.js with Hapi.js framework
+- **Database**: PostgreSQL
+- **Authentication**: Firebase Admin SDK
+- **Image Processing**: Custom AI models
+- **Unique IDs**: UUID for generating scan identifiers
+- **Documentation**: Custom HTML/CSS/JS documentation
+
+## 📝 API Documentation
+
+For comprehensive API documentation, visit:
+
+**[https://server.anevia.my.id](https://server.anevia.my.id)**
+
+The documentation includes:
+- Detailed endpoint descriptions
+- Request/response formats
+- Authentication requirements
+- Example usage
+
+## 🔧 Prerequisites
+
+- **Node.js** (v14 or higher)
+- **PostgreSQL** database
+- **Firebase** project with Authentication enabled
+- **Storage** space for image files
+
+## 💾 Database Schema
+
+> **Important**: Before creating tables, make sure to connect to the anevia_db database using `\c anevia_db` in the psql shell or by specifying the database when connecting: `psql -U postgres -d anevia_db`. After creating tables, grant all necessary privileges to your database user.
 
 ### Scans Table
 ```sql
 CREATE TABLE scans (
-  scan_id VARCHAR2(10) PRIMARY KEY,
-  photo_url VARCHAR2(50) NOT NULL,
+  scan_id VARCHAR(10) PRIMARY KEY,
+  photo_url VARCHAR(50) NOT NULL,
   scan_result BOOLEAN NOT NULL,
   scan_date TIMESTAMP NOT NULL
 );
@@ -66,93 +107,115 @@ CREATE TABLE users (
 );
 ```
 
-## Authentication
+### Privileges
+After creating tables, ensure your database user has all necessary privileges:
+```sql
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO anevia_admin;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO anevia_admin;
+```
 
-The application uses Firebase Authentication for user management with the following features:
+## 🔐 Authentication System
 
-- Multiple sign-in methods:
-  - Email/Password
-  - Google OAuth
-- Provider linking (connect multiple auth methods to one account)
-- Token-based authentication
-- User profile management
-- Secure password handling
+Anevia uses Firebase Authentication for secure user management:
+
+### Key Features
+
+- **Multiple Sign-in Methods**:
+  - Email/Password authentication
+  - Google OAuth integration
+  - GitHub authentication
+
+- **Account Management**:
+  - Provider linking (connect multiple auth methods to one account)
+  - Password reset functionality
+  - Profile updates
+  - Account deletion (both from Firebase and PostgreSQL)
+
+- **Security**:
+  - Token-based authentication
+  - Secure password handling
+  - Token verification and refresh
 
 ### Authentication Flow
 
-1. User authenticates with Firebase (frontend) using Email/Password or Google
-2. Firebase returns an ID token to the frontend
-3. Frontend sends the token to the backend's `/auth/verify` endpoint
-4. Backend verifies the token using Firebase Admin SDK
-5. If valid, backend creates or retrieves user from PostgreSQL database
-6. Backend returns user profile data to frontend
-7. Frontend stores the token (typically in localStorage) for subsequent authenticated requests
-8. Frontend must handle token refresh as Firebase tokens expire after 1 hour
+1. User authenticates with Firebase on the frontend
+2. Firebase issues an ID token
+3. Frontend sends token to backend's `/auth/verify` endpoint
+4. Backend verifies token with Firebase Admin SDK
+5. Backend creates or retrieves user from PostgreSQL database
+6. User profile data is returned to frontend
+7. Frontend stores token for authenticated requests
+8. Token refresh is handled automatically (Firebase tokens expire after 1 hour)
 
-For detailed implementation guidance, including code examples for frontend integration, refer to the web documentation. The documentation includes specific considerations for:
+For detailed implementation guidance and code examples, refer to the [API documentation](https://server.anevia.my.id).
 
-- Firebase SDK integration
-- Token management and refresh
-- Authentication state monitoring
-- Making authenticated requests
-- Provider linking (adding email/password to OAuth accounts)
+## 💻 Local Development Setup
 
-A reference implementation is available in the `auth-test.html` file, which demonstrates all authentication features.
-
-## Local Development Setup
-
-1. Clone the repository:
-   ```
+1. **Clone the repository**:
+   ```bash
    git clone https://github.com/Chhrone/anevia-backend.git
    cd anevia-backend
    ```
 
-2. Install dependencies:
-   ```
+2. **Install dependencies**:
+   ```bash
    npm install
    ```
 
-3. Create a PostgreSQL database:
+3. **Create a PostgreSQL database and user**:
    ```sql
    CREATE DATABASE anevia_db;
    CREATE USER anevia_admin WITH ENCRYPTED PASSWORD '<your_secure_password>';
    GRANT ALL PRIVILEGES ON DATABASE anevia_db TO anevia_admin;
    ```
 
-4. Create the required tables:
+4. **Connect to the database and create the required tables**:
+   ```bash
+   # Connect to the anevia_db database
+   psql -U postgres -d anevia_db
+
+   # Or if you're already in the psql shell
+   \c anevia_db
+   ```
+
+   Then create the tables using the schema definitions provided in the [Database Schema](#database-schema) section:
    ```sql
    -- Scans table
    CREATE TABLE scans (
-     scan_id VARCHAR2(10) PRIMARY KEY,
-     photo_url VARCHAR2(50) NOT NULL,
+     scan_id VARCHAR(10) PRIMARY KEY,
+     photo_url VARCHAR(50) NOT NULL,
      scan_result BOOLEAN NOT NULL,
      scan_date TIMESTAMP NOT NULL
    );
 
    -- Users table
    CREATE TABLE users (
-    uid VARCHAR(50) PRIMARY KEY,
-    username VARCHAR(50) NOT NULL UNIQUE,
-    email VARCHAR(100) NOT NULL UNIQUE,
-    password VARCHAR(50),
-    photo_url VARCHAR(100) DEFAULT '/profiles/default-profile.jpg',
-    birthdate DATE,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-  );
+     uid VARCHAR(50) PRIMARY KEY,
+     username VARCHAR(50) NOT NULL UNIQUE,
+     email VARCHAR(100) NOT NULL UNIQUE,
+     password VARCHAR(50),
+     photo_url VARCHAR(100) DEFAULT '/profiles/default-profile.jpg',
+     birthdate DATE,
+     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+   );
+
+   -- Ensure the anevia_admin user has all necessary privileges
+   GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO anevia_admin;
+   GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO anevia_admin;
    ```
 
-5. Set up Firebase Authentication:
+5. **Set up Firebase Authentication**:
    - Create a Firebase project at [Firebase Console](https://console.firebase.google.com/)
-   - Enable Email/Password and Google authentication providers
+   - Enable Email/Password, Google, and GitHub authentication providers
    - Generate a service account key from Project Settings > Service Accounts
    - Download the service account key JSON file
 
-6. Create a `.env` file based on `.env.example`:
-   ```
+6. **Configure environment variables**:
+   ```bash
    cp .env.example .env
    ```
 
-7. Configure your `.env` file with the following variables:
+7. **Update your `.env` file** with your specific configuration:
    ```
    # Server Configuration
    PORT=5000
@@ -171,48 +234,66 @@ A reference implementation is available in the `auth-test.html` file, which demo
    FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nYour Private Key\n-----END PRIVATE KEY-----\n"
    ```
 
-8. Start the development server:
+8. **Create required directories**:
+   ```bash
+   mkdir -p public/images/scans
+   mkdir -p public/images/conjunctivas
+   mkdir -p public/images/profiles
    ```
+
+9. **Start the development server**:
+   ```bash
    npm run dev
    ```
 
-## AWS EC2 Deployment
+10. **Access the API documentation** at [http://localhost:5000](http://localhost:5000)
+
+## 🚀 AWS EC2 Deployment
 
 ### Option 1: Manual Deployment
 
-1. Launch an EC2 instance (Amazon Linux 2 or Ubuntu recommended)
+1. **Launch an EC2 instance**:
+   - Amazon Linux 2 or Ubuntu recommended
+   - Ensure security groups allow inbound traffic on port 5000 (or your configured port)
 
-2. Install Node.js and PostgreSQL on the instance
+2. **Set up the environment**:
+   ```bash
+   # Install Node.js
+   curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+   sudo apt-get install -y nodejs
 
-3. Clone the repository:
+   # Install PostgreSQL
+   sudo apt-get install -y postgresql postgresql-contrib
    ```
+
+3. **Clone the repository**:
+   ```bash
    git clone https://github.com/Chhrone/anevia-backend.git
    cd anevia-backend
    ```
 
-4. Set up the database as described in the local setup (both scans and users tables)
+4. **Set up the database**:
+   - Follow steps 3-4 from the Local Development Setup section
+   - Make sure to connect to the anevia_db database before creating tables
+   - Ensure the database user has all necessary privileges on tables and sequences
 
-5. Set up Firebase Authentication as described in the local setup
+5. **Configure Firebase** following step 5 from the Local Development Setup section
 
-6. Install dependencies:
-   ```
+6. **Install dependencies and create directories**:
+   ```bash
    npm install
+   mkdir -p public/images/scans public/images/conjunctivas public/images/profiles
    ```
 
-7. Create a `.env` file with appropriate values:
-   ```
+7. **Configure environment**:
+   ```bash
    cp .env.example .env
-   nano .env  # Edit with your values
+   nano .env  # Edit with your production values
    ```
 
-8. Start the server:
-   ```
-   npm start
-   ```
-
-9. (Optional) Use PM2 to keep the application running:
-   ```
-   npm install -g pm2
+8. **Use PM2 for process management**:
+   ```bash
+   sudo npm install -g pm2
    pm2 start server.js --name "anevia-backend"
    pm2 save
    pm2 startup
@@ -220,41 +301,58 @@ A reference implementation is available in the `auth-test.html` file, which demo
 
 ### Option 2: Using the Deployment Script
 
-**Note:** This script assumes you already have a PostgreSQL database set up on your EC2 instance with the required 'scans' and 'users' tables. The script will NOT create or modify your database schema, only configure the connection.
+**Note:** This script assumes you already have a PostgreSQL database set up on your EC2 instance with the required tables.
 
-1. Clone the repository on your EC2 instance:
-   ```
+1. **Clone and prepare**:
+   ```bash
    git clone https://github.com/Chhrone/anevia-backend.git
    cd anevia-backend
-   ```
-
-2. Make the deployment script executable:
-   ```
    chmod +x deploy.sh
    ```
 
-3. Run the deployment script:
-   ```
+2. **Run the deployment script**:
+   ```bash
    ./deploy.sh
    ```
 
-4. Follow the prompts to configure your environment with your existing database credentials and Firebase configuration
+3. **Follow the prompts** to configure your environment:
+   - Database connection details
+   - Server port configuration
+   - Optional Nginx reverse proxy setup
+   - Optional SSL configuration with Let's Encrypt
 
-### Accessing the API on EC2
+The deployment script can automatically:
+- Install and configure Nginx as a reverse proxy
+- Set up SSL certificates with Let's Encrypt
+- Configure proper headers and proxy settings
+- Enable the site and restart services
 
-After deployment, the API will be accessible at:
+### Production Recommendations
 
-```
-http://<Your EC2 Public IP>:5000/api/scans
-http://<Your EC2 Public IP>:5000/auth/verify
-```
+For a production-ready deployment, consider:
 
-For better accessibility, consider:
+1. **Domain and HTTPS**:
+   - Register a domain with AWS Route 53 or another provider
+   - Set up HTTPS using Let's Encrypt
+   - Configure Nginx as a reverse proxy
 
-1. Setting up a domain name using AWS Route 53 or another DNS provider
-2. Configuring HTTPS using a service like Let's Encrypt
-3. Setting up a reverse proxy like Nginx to handle SSL termination and serve the API on port 80/443
+2. **Monitoring and Logging**:
+   - Set up PM2 monitoring (`pm2 monitor`)
+   - Configure application logging
+   - Set up AWS CloudWatch alarms
 
-## License
+3. **Backup Strategy**:
+   - Regular PostgreSQL database backups
+   - Image file backups
+   - Environment configuration backups
+
+## 📄 License
 
 ISC
+
+---
+
+<div align="center">
+  <p>Visit our API documentation at <a href="https://server.anevia.my.id">https://server.anevia.my.id</a></p>
+  <p>© 2025 Anevia - Eye Conjunctiva Scanning System for Anemia Detection</p>
+</div>

@@ -2,6 +2,7 @@
 
 # Anevia Backend Deployment Script for EC2
 # This script helps set up and run the Anevia backend on an EC2 instance
+# with optional Nginx configuration for reverse proxy
 
 # Make script exit on any error
 set -e
@@ -29,9 +30,11 @@ if ! command -v pm2 &> /dev/null; then
     sudo npm install -g pm2
 fi
 
-# Create images directory if it doesn't exist
+# Create required directories if they don't exist
 echo "Setting up directories..."
-mkdir -p images/scans
+mkdir -p public/images/scans
+mkdir -p public/images/conjunctivas
+mkdir -p public/images/profiles
 
 # Install dependencies
 echo "Installing dependencies..."
@@ -111,6 +114,116 @@ pool.query('SELECT NOW()', (err, res) => {
 });
 "
 
+# Ask if user wants to set up Nginx as a reverse proxy
+read -p "Do you want to set up Nginx as a reverse proxy? (y/n): " setup_nginx
+if [[ "$setup_nginx" =~ ^[Yy]$ ]]; then
+    # Install Nginx if not already installed
+    if ! command -v nginx &> /dev/null; then
+        echo "Installing Nginx..."
+        sudo apt-get install -y nginx || sudo yum install -y nginx
+    fi
+
+    # Ask for domain name
+    read -p "Enter your domain name (e.g., server.anevia.my.id, leave empty for IP only): " domain_name
+
+    # Ask if SSL should be configured
+    read -p "Do you want to set up SSL with Let's Encrypt? (y/n): " setup_ssl
+
+    # Create Nginx configuration
+    echo "Creating Nginx configuration..."
+
+    if [[ "$setup_ssl" =~ ^[Yy]$ ]] && [ ! -z "$domain_name" ]; then
+        # Install Certbot for Let's Encrypt SSL
+        echo "Installing Certbot for Let's Encrypt..."
+        sudo apt-get install -y certbot python3-certbot-nginx || sudo yum install -y certbot python3-certbot-nginx
+
+        # Create Nginx config file for SSL
+        sudo tee /etc/nginx/sites-available/anevia > /dev/null << EOF
+server {
+    listen 80;
+    server_name $domain_name;
+
+    location / {
+        return 301 https://\$host\$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    server_name $domain_name;
+
+    ssl_certificate /etc/letsencrypt/live/$domain_name/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/$domain_name/privkey.pem;
+
+    location / {
+        proxy_pass http://localhost:$(grep PORT .env | cut -d '=' -f2);
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_cache_bypass \$http_upgrade;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+
+    # Increase max upload size
+    client_max_body_size 10M;
+}
+EOF
+
+        # Create symbolic link to enable the site
+        if [ -d "/etc/nginx/sites-enabled" ]; then
+            sudo ln -sf /etc/nginx/sites-available/anevia /etc/nginx/sites-enabled/
+        fi
+
+        # Obtain SSL certificate
+        echo "Obtaining SSL certificate from Let's Encrypt..."
+        sudo certbot --nginx -d $domain_name --non-interactive --agree-tos --email admin@$domain_name
+
+    else
+        # Create basic Nginx config without SSL
+        sudo tee /etc/nginx/sites-available/anevia > /dev/null << EOF
+server {
+    listen 80;
+    server_name ${domain_name:-_};
+
+    location / {
+        proxy_pass http://localhost:$(grep PORT .env | cut -d '=' -f2);
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_cache_bypass \$http_upgrade;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+
+    # Increase max upload size
+    client_max_body_size 10M;
+}
+EOF
+
+        # Create symbolic link to enable the site
+        if [ -d "/etc/nginx/sites-enabled" ]; then
+            sudo ln -sf /etc/nginx/sites-available/anevia /etc/nginx/sites-enabled/
+        fi
+    fi
+
+    # Test Nginx configuration
+    echo "Testing Nginx configuration..."
+    sudo nginx -t
+
+    # Restart Nginx
+    echo "Restarting Nginx..."
+    sudo systemctl restart nginx
+
+    # Enable Nginx to start on boot
+    echo "Enabling Nginx to start on boot..."
+    sudo systemctl enable nginx
+fi
+
 # Start the application with PM2
 echo "Starting the application with PM2..."
 pm2 start server.js --name "anevia-backend"
@@ -122,5 +235,19 @@ sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u $USER --hp $HOME
 
 echo "===== Deployment Complete ====="
 echo "The Anevia backend is now running on port $(grep PORT .env | cut -d '=' -f2)"
+
+if [[ "$setup_nginx" =~ ^[Yy]$ ]]; then
+    if [[ "$setup_ssl" =~ ^[Yy]$ ]] && [ ! -z "$domain_name" ]; then
+        echo "Your application is accessible at: https://$domain_name"
+    elif [ ! -z "$domain_name" ]; then
+        echo "Your application is accessible at: http://$domain_name"
+    else
+        echo "Your application is accessible at: http://your-server-ip"
+    fi
+    echo "Nginx is configured as a reverse proxy"
+else
+    echo "Your application is accessible at: http://your-server-ip:$(grep PORT .env | cut -d '=' -f2)"
+fi
+
 echo "To check application status, run: pm2 status"
 echo "To view logs, run: pm2 logs anevia-backend"
