@@ -2,6 +2,7 @@
 
 const scanController = require('../controllers/scanController');
 const userController = require('../controllers/userController');
+const chatController = require('../controllers/chatController');
 const { verifyToken } = require('../middleware/auth');
 
 module.exports = [
@@ -138,6 +139,72 @@ module.exports = [
                 allow: 'application/json'
             },
             handler: userController.resetPassword
+        }
+    },
+
+    // Chat endpoints
+
+    // POST endpoint to create a new chat session
+    {
+        method: 'POST',
+        path: '/chat/sessions',
+        options: {
+            pre: [
+                { method: verifyToken }
+            ],
+            handler: chatController.createChatSession
+        }
+    },
+
+    // GET endpoint to retrieve all chat sessions for a user
+    {
+        method: 'GET',
+        path: '/chat/sessions',
+        options: {
+            pre: [
+                { method: verifyToken }
+            ],
+            handler: chatController.getUserChatSessions
+        }
+    },
+
+    // GET endpoint to retrieve chat history for a session
+    {
+        method: 'GET',
+        path: '/chat/sessions/{sessionId}',
+        options: {
+            pre: [
+                { method: verifyToken }
+            ],
+            handler: chatController.getChatHistory
+        }
+    },
+
+    // POST endpoint to send a message in a chat session
+    {
+        method: 'POST',
+        path: '/chat/sessions/{sessionId}/messages',
+        options: {
+            pre: [
+                { method: verifyToken }
+            ],
+            payload: {
+                parse: true,
+                allow: 'application/json'
+            },
+            handler: chatController.sendMessage
+        }
+    },
+
+    // DELETE endpoint to delete a chat session
+    {
+        method: 'DELETE',
+        path: '/chat/sessions/{sessionId}',
+        options: {
+            pre: [
+                { method: verifyToken }
+            ],
+            handler: chatController.deleteChatSession
         }
     }
 ];
