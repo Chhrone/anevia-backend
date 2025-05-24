@@ -1,16 +1,16 @@
 'use strict';
 
-const { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } = require('@google/generative-ai'); // Added HarmCategory, HarmBlockThreshold
+const { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } = require('@google/generative-ai');
 const { v4: uuidv4 } = require('uuid');
 const Scan = require('../models/scan');
 const User = require('../models/user');
 const ChatSession = require('../models/chatSession');
 const Chat = require('../models/chat');
 
-// Access your API key as an environment variable
+// Access API key
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// Helper function to calculate age from birthdate
+// age calculator
 const calculateAge = (birthdate) => {
     if (!birthdate) return null;
     const today = new Date();

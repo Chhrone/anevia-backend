@@ -1,7 +1,6 @@
 # Anevia Backend
 
 <div align="center">
-  <img src="public/images/logo.png" alt="Anevia Logo" width="200"/>
   <h3>Eye Conjunctiva Scanning System for Anemia Detection</h3>
 </div>
 
@@ -16,6 +15,7 @@ Anevia is an innovative healthcare solution that uses AI-powered image analysis 
 - [Prerequisites](#prerequisites)
 - [Database Schema](#database-schema)
 - [Authentication System](#authentication-system)
+- [Chat System](#chat-system)
 - [Local Development Setup](#local-development-setup)
 - [AWS EC2 Deployment](#aws-ec2-deployment)
 - [License](#license)
@@ -27,7 +27,7 @@ Anevia's backend provides a robust API for processing eye conjunctiva images to 
 1. **Eye Region Extraction**: Identifies and crops the conjunctiva region from uploaded eye images
 2. **Anemia Analysis**: Analyzes the extracted conjunctiva to determine potential anemia indicators
 
-The backend also handles user authentication, profile management, and scan history storage.
+The backend also handles user authentication, profile management, scan history storage, and provides an AI-powered chat assistant.
 
 ## ✨ Features
 
@@ -47,6 +47,12 @@ The backend also handles user authentication, profile management, and scan histo
   - Secure storage of scan results and user data
   - Image file management
 
+- **AI Chat Assistant (ChatVia)**:
+  - Integrates with Google Gemini model
+  - Initiates chat sessions based on scan data
+  - Provides health advice related to anemia
+  - Manages chat history for users
+
 - **RESTful API**:
   - Well-documented endpoints
   - Token-based authentication
@@ -57,8 +63,9 @@ The backend also handles user authentication, profile management, and scan histo
 - **Backend**: Node.js with Hapi.js framework
 - **Database**: PostgreSQL
 - **Authentication**: Firebase Admin SDK
+- **AI Model**: Google Gemini API
 - **Image Processing**: Custom AI models
-- **Unique IDs**: UUID for generating scan identifiers
+- **Unique IDs**: UUID for generating identifiers
 - **Documentation**: Custom HTML/CSS/JS documentation
 
 ## 📝 API Documentation
@@ -78,6 +85,7 @@ The documentation includes:
 - **Node.js** (v14 or higher)
 - **PostgreSQL** database
 - **Firebase** project with Authentication enabled
+- **Google Cloud Project** with Gemini API enabled and API Key
 - **Storage** space for image files
 
 ## 💾 Database Schema
@@ -104,6 +112,30 @@ CREATE TABLE users (
   photo_url VARCHAR(100) DEFAULT '/profiles/default-profile.jpg',
   birthdate DATE,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### Chat Sessions Table
+```sql
+CREATE TABLE chat_sessions (
+    session_id VARCHAR(50) PRIMARY KEY,
+    user_id VARCHAR(50) REFERENCES users(uid),
+    title TEXT,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+### Chats Table
+```sql
+CREATE TABLE chats (
+    chat_id SERIAL PRIMARY KEY,
+    session_id VARCHAR(50) REFERENCES chat_sessions(session_id),
+    sender VARCHAR(10) CHECK (sender IN ('user', 'ai')),
+    message TEXT,
+    photo_url VARCHAR(255),
+    timestamp TIMESTAMP DEFAULT NOW(),
+    type VARCHAR(10) DEFAULT 'text'
 );
 ```
 
@@ -148,6 +180,30 @@ Anevia uses Firebase Authentication for secure user management:
 8. Token refresh is handled automatically (Firebase tokens expire after 1 hour)
 
 For detailed implementation guidance and code examples, refer to the [API documentation](https://server.anevia.my.id).
+
+## 💬 Chat System
+
+The Anevia backend integrates with Google Gemini to provide an AI-powered chat assistant (ChatVia!) for users to get health advice related to anemia.
+
+### Key Features
+
+- **AI-Powered Conversations**:
+  - Utilizes Google Gemini model for natural language understanding and generation.
+  - Provides advice based on scan results and user queries.
+
+- **Session Management**:
+  - Creates new chat sessions linked to user and scan data.
+  - Maintains chat history within sessions.
+
+- **Safety Handling**:
+  - Configured to handle content safety filters (though filters can be disabled for specific use cases).
+
+### Endpoints
+
+- **`POST /api/chats`**: Start a new chat session with ChatVia! based on scan data.
+- **`POST /api/chats/messages`**: Send a message within an existing chat session and get AI response.
+- **`GET /api/chats/{userId}`**: Retrieve all chat sessions for a specific user.
+- **`GET /api/chats/{userId}/{sessionId}`**: Retrieve all messages within a specific chat session (with user ownership verification).
 
 ## 💻 Local Development Setup
 
@@ -199,6 +255,26 @@ For detailed implementation guidance and code examples, refer to the [API docume
      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
    );
 
+   -- Chat Sessions table
+   CREATE TABLE chat_sessions (
+       session_id VARCHAR(50) PRIMARY KEY,
+       user_id VARCHAR(50) REFERENCES users(uid),
+       title TEXT,
+       created_at TIMESTAMP DEFAULT NOW(),
+       updated_at TIMESTAMP DEFAULT NOW()
+   );
+
+   -- Chats table
+   CREATE TABLE chats (
+       chat_id SERIAL PRIMARY KEY,
+       session_id VARCHAR(50) REFERENCES chat_sessions(session_id),
+       sender VARCHAR(10) CHECK (sender IN ('user', 'ai')),
+       message TEXT,
+       photo_url VARCHAR(255),
+       timestamp TIMESTAMP DEFAULT NOW(),
+       type VARCHAR(10) DEFAULT 'text'
+   );
+
    -- Ensure the anevia_admin user has all necessary privileges
    GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO anevia_admin;
    GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO anevia_admin;
@@ -210,12 +286,16 @@ For detailed implementation guidance and code examples, refer to the [API docume
    - Generate a service account key from Project Settings > Service Accounts
    - Download the service account key JSON file
 
-6. **Configure environment variables**:
+6. **Set up Google Gemini API**:
+   - Create a Google Cloud Project and enable the Gemini API.
+   - Generate an API Key for the Gemini API.
+
+7. **Configure environment variables**:
    ```bash
    cp .env.example .env
    ```
 
-7. **Update your `.env` file** with your specific configuration:
+8. **Update your `.env` file** with your specific configuration:
    ```
    # Server Configuration
    PORT=5000
@@ -232,21 +312,24 @@ For detailed implementation guidance and code examples, refer to the [API docume
    FIREBASE_PROJECT_ID=your-project-id
    FIREBASE_CLIENT_EMAIL=your-client-email@your-project-id.iam.gserviceaccount.com
    FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nYour Private Key\n-----END PRIVATE KEY-----\n"
+
+   # Google Gemini API Configuration
+   GEMINI_API_KEY=your_gemini_api_key
    ```
 
-8. **Create required directories**:
+9. **Create required directories**:
    ```bash
    mkdir -p public/images/scans
    mkdir -p public/images/conjunctivas
    mkdir -p public/images/profiles
    ```
 
-9. **Start the development server**:
-   ```bash
-   npm run dev
-   ```
+10. **Start the development server**:
+    ```bash
+    npm run dev
+    ```
 
-10. **Access the API documentation** at [http://localhost:5000](http://localhost:5000)
+11. **Access the API documentation** at [http://localhost:5000](http://localhost:5000)
 
 ## 🚀 AWS EC2 Deployment
 
@@ -279,19 +362,21 @@ For detailed implementation guidance and code examples, refer to the [API docume
 
 5. **Configure Firebase** following step 5 from the Local Development Setup section
 
-6. **Install dependencies and create directories**:
+6. **Configure Google Gemini API** following step 6 from the Local Development Setup section
+
+7. **Install dependencies and create directories**:
    ```bash
    npm install
    mkdir -p public/images/scans public/images/conjunctivas public/images/profiles
    ```
 
-7. **Configure environment**:
+8. **Configure environment**:
    ```bash
    cp .env.example .env
    nano .env  # Edit with your production values
    ```
 
-8. **Use PM2 for process management**:
+9. **Use PM2 for process management**:
    ```bash
    sudo npm install -g pm2
    pm2 start server.js --name "anevia-backend"
