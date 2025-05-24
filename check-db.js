@@ -36,7 +36,7 @@ async function checkTableExists(tableName) {
 
 // Jalankan pengecekan untuk beberapa tabel
 async function main() {
-  const tablesToCheck = ['users', 'scans']; // tambahkan tabel lain jika perlu
+  const tablesToCheck = ['users', 'scans', 'chats', 'chat_sessions']; // tambahkan tabel lain jika perlu
 
   for (const table of tablesToCheck) {
     await checkTableExists(table);
