@@ -2,9 +2,47 @@
 
 const scanController = require('../controllers/scanController');
 const userController = require('../controllers/userController');
+const chatController = require('../controllers/chatController');
 const { verifyToken } = require('../middleware/auth');
 
 module.exports = [
+    // POST endpoint to start a new chat session from a scan
+    {
+        method: 'POST',
+        path: '/api/chats',
+        options: {
+            payload: {
+                parse: true,
+                allow: 'application/json'
+            },
+            handler: chatController.startChatFromScan
+        }
+    },
+    // POST endpoint to send a message within an existing chat session
+    {
+        method: 'POST',
+        path: '/api/chats/messages',
+        options: {
+            payload: {
+                parse: true,
+                allow: 'application/json'
+            },
+            handler: chatController.sendMessage
+        }
+    },
+    // GET endpoint to retrieve all chat sessions for a user
+    {
+        method: 'GET',
+        path: '/api/chats/{userId}',
+        handler: chatController.getAllChatSessionsForUser // This function will be created next
+    },
+    // GET endpoint to retrieve messages for a specific chat session by user and session ID
+    {
+        method: 'GET',
+        path: '/api/chats/{userId}/{sessionId}',
+        handler: chatController.getChatMessagesBySessionId // This function will be created next
+    },
+
     // POST endpoint to upload a new scan
     {
         method: 'POST',

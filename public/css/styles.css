@@ -188,6 +188,68 @@ main {
     gap: 8px;
 }
 
+/* Dropdown specific styles */
+.sidenav .dropdown-toggle {
+    cursor: pointer;
+    margin-bottom: 0; /* Remove default li margin */
+}
+
+.sidenav .dropdown-toggle > a {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-right: 5px; /* Space for icon */
+    font-weight: 600;
+    color: var(--dark-color);
+    border-left: 2px solid transparent; /* Reset border for dropdown toggle */
+    padding-left: 5px;
+}
+
+.sidenav .dropdown-toggle > a:hover {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.sidenav .dropdown-toggle.active > a {
+    color: var(--primary-color);
+    border-left: 3px solid var(--primary-color);
+    padding-left: 7px;
+    background-color: rgba(41, 122, 254, 0.05);
+    border-radius: 0 4px 4px 0;
+}
+
+.sidenav .dropdown-icon {
+    transition: transform 0.3s ease;
+}
+
+.sidenav .dropdown-toggle.active .dropdown-icon {
+    transform: rotate(180deg);
+}
+
+.sidenav .dropdown-menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: none; /* Hidden by default */
+    padding-left: 10px; /* Indent sub-items */
+    border-left: 1px solid var(--border-color);
+    margin-top: 5px;
+    margin-bottom: 10px;
+}
+
+.sidenav .dropdown-menu.active {
+    display: block; /* Show when active */
+}
+
+.sidenav .dropdown-menu .sub-item {
+    margin-bottom: 5px;
+}
+
+.sidenav .dropdown-menu .sub-item a {
+    padding-left: 20px; /* Further indent sub-items within dropdown */
+}
+
+
 /* Removed hover padding effect */
 
 /* Method labels in sidebar - plain style */

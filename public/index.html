@@ -23,20 +23,37 @@
                 <h3>Contents</h3>
                 <ul>
                     <li><a href="#overview">API Overview</a></li>
-                    <li><a href="#scan-endpoints">Scan Endpoints</a></li>
-                    <li class="sub-item"><a href="#post-scans"><span class="method-label">POST</span> Upload Eye Image</a></li>
-                    <li class="sub-item"><a href="#get-scans"><span class="method-label">GET</span> Get All Scans</a></li>
-                    <li class="sub-item"><a href="#get-scan-by-id"><span class="method-label">GET</span> Get Scan by ID</a></li>
-                    <li><a href="#auth-endpoints">Authentication Endpoints</a></li>
-                    <li class="sub-item"><a href="#auth-flow">Authentication Flow</a></li>
-                    <li class="sub-item"><a href="#frontend-implementation">Frontend Auth Consideration</a></li>
-                    <li class="sub-item"><a href="#post-auth-verify"><span class="method-label">POST</span> Verify Firebase Token</a></li>
-                    <li class="sub-item"><a href="#post-auth-profile-image"><span class="method-label">POST</span> Upload Profile Image</a></li>
-                    <li class="sub-item"><a href="#post-auth-profile-link-password"><span class="method-label">POST</span> Link Email/Password</a></li>
-                    <li class="sub-item"><a href="#get-auth-profile"><span class="method-label">GET</span> Get User Profile</a></li>
-                    <li class="sub-item"><a href="#put-auth-profile"><span class="method-label">PUT</span> Update User Profile</a></li>
-                    <li class="sub-item"><a href="#put-auth-profile-reset-password"><span class="method-label">PUT</span> Reset User Password</a></li>
-                    <li class="sub-item"><a href="#delete-auth-profile"><span class="method-label">DELETE</span> Delete User Profile</a></li>
+                    <li class="dropdown-toggle" data-target="scan-dropdown">
+                        <a href="#scan-endpoints">Scan Endpoints <i class="fas fa-caret-down dropdown-icon"></i></a>
+                        <ul class="dropdown-menu" id="scan-dropdown">
+                            <li class="sub-item"><a href="#post-scans"><span class="method-label">POST</span> Upload Eye Image</a></li>
+                            <li class="sub-item"><a href="#get-scans"><span class="method-label">GET</span> Get All Scans</a></li>
+                            <li class="sub-item"><a href="#get-scan-by-id"><span class="method-label">GET</span> Get Scan by ID</a></li>
+                        </ul>
+                    </li>
+                    <li class="dropdown-toggle" data-target="chat-dropdown">
+                        <a href="#chat-endpoints">Chat Endpoints <i class="fas fa-caret-down dropdown-icon"></i></a>
+                        <ul class="dropdown-menu" id="chat-dropdown">
+                            <li class="sub-item"><a href="#post-chats"><span class="method-label">POST</span> Start Chat Session</a></li>
+                            <li class="sub-item"><a href="#post-chats-messages"><span class="method-label">POST</span> Send Chat Message</a></li>
+                            <li class="sub-item"><a href="#get-chats-by-user"><span class="method-label">GET</span> Get User Chat Sessions</a></li>
+                            <li class="sub-item"><a href="#get-chats-messages-by-session"><span class="method-label">GET</span> Get Chat Messages by Session</a></li>
+                        </ul>
+                    </li>
+                    <li class="dropdown-toggle" data-target="auth-dropdown">
+                        <a href="#auth-endpoints">Authentication Endpoints <i class="fas fa-caret-down dropdown-icon"></i></a>
+                        <ul class="dropdown-menu" id="auth-dropdown">
+                            <li class="sub-item"><a href="#auth-flow">Authentication Flow</a></li>
+                            <li class="sub-item"><a href="#frontend-implementation">Frontend Auth Consideration</a></li>
+                            <li class="sub-item"><a href="#post-auth-verify"><span class="method-label">POST</span> Verify Firebase Token</a></li>
+                            <li class="sub-item"><a href="#post-auth-profile-image"><span class="method-label">POST</span> Upload Profile Image</a></li>
+                            <li class="sub-item"><a href="#post-auth-profile-link-password"><span class="method-label">POST</span> Link Email/Password</a></li>
+                            <li class="sub-item"><a href="#get-auth-profile"><span class="method-label">GET</span> Get User Profile</a></li>
+                            <li class="sub-item"><a href="#put-auth-profile"><span class="method-label">PUT</span> Update User Profile</a></li>
+                            <li class="sub-item"><a href="#put-auth-profile-reset-password"><span class="method-label">PUT</span> Reset User Password</a></li>
+                            <li class="sub-item"><a href="#delete-auth-profile"><span class="method-label">DELETE</span> Delete User Profile</a></li>
+                        </ul>
+                    </li>
                 </ul>
             </div>
         </aside>
@@ -186,6 +203,232 @@
 
             </section>
 
+            <section id="chat-endpoints" class="endpoints">
+                <h2>Chat Endpoints</h2>
+                <p>Endpoints for interacting with the ChatVia! AI assistant, powered by Gemini.</p>
+
+                <div class="endpoint" id="post-chats">
+                    <div class="endpoint-header">
+                        <span class="method post">POST</span>
+                        <span class="path">/api/chats</span>
+                    </div>
+                    <div class="endpoint-content">
+                        <h3>Start New Chat Session from Scan Data</h3>
+                        <p>
+                            Initiate a new chat session with ChatVia! by providing scan data. The AI will receive
+                            the scan details and an initial prompt to assist the user with anemia-related questions.
+                        </p>
+
+                        <div class="subsection">
+                            <h4>Request</h4>
+                            <p><strong>Content-Type:</strong> <code>application/json</code></p>
+                            <p><strong>Body:</strong></p>
+                            <ul>
+                                <li><code>scanId</code>: The ID of the scan to base the chat on.</li>
+                                <li><code>userId</code>: The ID of the user initiating the chat.</li>
+                            </ul>
+                        </div>
+
+                        <div class="subsection">
+                            <h4>Success Response (201 Created)</h4>
+                            <pre><code>{
+  "status": "success",
+  "message": "Chat session started successfully with ChatVia!",
+  "data": {
+    "sessionId": "uuid-generated-session-id",
+    "initialMessage": {
+      "sessionId": "uuid-generated-session-id",
+      "sender": "user",
+      "message": "Data hasil scan: ...",
+      "photoUrl": "/scans/scan-a1b2c3d4.jpg",
+      "timestamp": "2023-05-20T12:34:56.789Z",
+      "type": "text"
+    },
+    "aiResponse": {
+      "sessionId": "uuid-generated-session-id",
+      "sender": "ai",
+      "message": "Halo! Berdasarkan data scan yang Anda berikan...",
+      "photoUrl": null,
+      "timestamp": "2023-05-20T12:34:57.123Z",
+      "type": "text"
+    }
+  }
+}</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="endpoint" id="post-chats-messages">
+                    <div class="endpoint-header">
+                        <span class="method post">POST</span>
+                        <span class="path">/api/chats/messages</span>
+                    </div>
+                    <div class="endpoint-content">
+                        <h3>Send Message in Existing Chat Session</h3>
+                        <p>
+                            Send a new message from the user to ChatVia! within an ongoing chat session.
+                            The AI will respond based on the current conversation context.
+                        </p>
+
+                        <div class="subsection">
+                            <h4>Request</h4>
+                            <p><strong>Content-Type:</strong> <code>application/json</code></p>
+                            <p><strong>Body:</strong></p>
+                            <ul>
+                                <li><code>sessionId</code>: The ID of the ongoing chat session.</li>
+                                <li><code>userId</code>: The ID of the user sending the message.</li>
+                                <li><code>message</code>: The text message from the user.</li>
+                            </ul>
+                        </div>
+
+                        <div class="subsection">
+                            <h4>Success Response (200 OK)</h4>
+                            <pre><code>{
+  "status": "success",
+  "message": "Message sent and AI responded successfully",
+  "data": {
+    "sessionId": "uuid-generated-session-id",
+    "userMessage": {
+      "sessionId": "uuid-generated-session-id",
+      "sender": "user",
+      "message": "Bagaimana cara meningkatkan kadar hemoglobin?",
+      "photoUrl": null,
+      "timestamp": "2023-05-20T12:35:00.000Z",
+      "type": "text"
+    },
+    "aiResponse": {
+      "sessionId": "uuid-generated-session-id",
+      "sender": "ai",
+      "message": "Untuk meningkatkan kadar hemoglobin, Anda bisa...",
+      "photoUrl": null,
+      "timestamp": "2023-05-20T12:35:01.000Z",
+      "type": "text"
+    }
+  }
+}</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="endpoint" id="get-chats-by-user">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/api/chats/{userId}</span>
+                    </div>
+                    <div class="endpoint-content">
+                        <h3>Get All Chat Sessions for a User</h3>
+                        <p>
+                            Retrieve a list of all chat sessions associated with a specific user.
+                        </p>
+
+                        <div class="subsection">
+                            <h4>Parameters</h4>
+                            <p><strong>URL Parameters:</strong></p>
+                            <ul>
+                                <li><code>userId</code>: The ID of the user whose chat sessions are to be retrieved.</li>
+                            </ul>
+                        </div>
+
+                        <div class="subsection">
+                            <h4>Success Response (200 OK)</h4>
+                            <pre><code>{
+  "status": "success",
+  "message": "Chat sessions fetched successfully",
+  "data": {
+    "chatSessions": [
+      {
+        "sessionId": "uuid-session-1",
+        "userId": "user-id-123",
+        "title": "Chat with ChatVia! about Scan a1b2c3d4",
+        "createdAt": "2023-05-18T10:00:00.000Z",
+        "updatedAt": "2023-05-20T12:34:56.789Z"
+      },
+      {
+        "sessionId": "uuid-session-2",
+        "userId": "user-id-123",
+        "title": "Chat with ChatVia! about Scan e5f6g7h8",
+        "createdAt": "2023-05-17T09:00:00.000Z",
+        "updatedAt": "2023-05-17T09:15:00.000Z"
+      }
+    ]
+  }
+}</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="endpoint" id="get-chats-messages-by-session">
+                    <div class="endpoint-header">
+                        <span class="method get">GET</span>
+                        <span class="path">/api/chats/{userId}/{sessionId}</span>
+                    </div>
+                    <div class="endpoint-content">
+                        <h3>Get Chat Messages by User and Session ID</h3>
+                        <p>
+                            Retrieve all messages within a specific chat session, ensuring the requesting user is the owner of the session.
+                        </p>
+
+                        <div class="subsection">
+                            <h4>Parameters</h4>
+                            <p><strong>URL Parameters:</strong></p>
+                            <ul>
+                                <li><code>userId</code>: The ID of the user who owns the chat session.</li>
+                                <li><code>sessionId</code>: The ID of the chat session to retrieve messages from.</li>
+                            </ul>
+                        </div>
+
+                        <div class="subsection">
+                            <h4>Success Response (200 OK)</h4>
+                            <pre><code>{
+  "status": "success",
+  "message": "Chat messages fetched successfully",
+  "data": {
+    "chatMessages": [
+      {
+        "chatId": 1,
+        "sessionId": "uuid-session-1",
+        "sender": "user",
+        "message": "Data hasil scan: ...",
+        "photoUrl": "/scans/scan-a1b2c3d4.jpg",
+        "timestamp": "2023-05-20T12:34:56.789Z",
+        "type": "text"
+      },
+      {
+        "chatId": 2,
+        "sessionId": "uuid-session-1",
+        "sender": "ai",
+        "message": "Halo! Berdasarkan data scan yang Anda berikan...",
+        "photoUrl": null,
+        "timestamp": "2023-05-20T12:34:57.123Z",
+        "type": "text"
+      },
+      {
+        "chatId": 3,
+        "sessionId": "uuid-session-1",
+        "sender": "user",
+        "message": "Bagaimana cara meningkatkan kadar hemoglobin?",
+        "photoUrl": null,
+        "timestamp": "2023-05-20T12:35:00.000Z",
+        "type": "text"
+      },
+      {
+        "chatId": 4,
+        "sessionId": "uuid-session-1",
+        "sender": "ai",
+        "message": "Untuk meningkatkan kadar hemoglobin, Anda bisa...",
+        "photoUrl": null,
+        "timestamp": "2023-05-20T12:35:01.000Z",
+        "type": "text"
+      }
+    ]
+  }
+}</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+
             <section id="auth-endpoints" class="endpoints">
                 <h2>Authentication Endpoints</h2>
                 <p>Endpoints for user authentication and profile management using Firebase Authentication.</p>
@@ -215,8 +458,8 @@
 npm install firebase
 
 // Or include via CDN
-&lt;script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-app.js"&gt;&lt;/script&gt;
-&lt;script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-auth.js"&gt;&lt;/script&gt;</code></pre>
+<script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-auth.js"></script></code></pre>
                         </li>
                         <li><strong>Firebase Configuration:</strong> Initialize Firebase with your project configuration:
                             <pre><code>// For Firebase JS SDK v9.x.x

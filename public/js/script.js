@@ -19,15 +19,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Update active states
                 updateActiveStates();
 
-                // If this is a sub-item, make sure it gets the active class
-                if (this.parentElement.classList.contains('sub-item')) {
-                    // Remove active class from all sub-items
-                    document.querySelectorAll('.sidenav .sub-item a').forEach(subLink => {
-                        subLink.classList.remove('active-endpoint');
-                    });
-
-                    // Add active class to clicked sub-item
-                    this.classList.add('active-endpoint');
+                // If this is a sub-item, make sure its parent dropdown is open and it gets the active class
+                if (this.closest('.dropdown-menu')) {
+                    const parentDropdownToggle = this.closest('.dropdown-toggle');
+                    if (parentDropdownToggle && !parentDropdownToggle.classList.contains('active')) {
+                        parentDropdownToggle.classList.add('active');
+                        const dropdownMenu = parentDropdownToggle.querySelector('.dropdown-menu');
+                        if (dropdownMenu) {
+                            dropdownMenu.classList.add('active');
+                        }
+                    }
                 }
             }
         });
@@ -47,6 +48,15 @@ document.addEventListener('DOMContentLoaded', function() {
             link.classList.remove('active-endpoint');
         });
 
+        // Close all dropdowns initially
+        document.querySelectorAll('.sidenav .dropdown-toggle').forEach(toggle => {
+            toggle.classList.remove('active');
+            const menu = toggle.querySelector('.dropdown-menu');
+            if (menu) {
+                menu.classList.remove('active');
+            }
+        });
+
         // Main sections
         const mainSectionLinks = document.querySelectorAll('.sidenav > div > ul > li > a');
 
@@ -54,20 +64,31 @@ document.addEventListener('DOMContentLoaded', function() {
         let activeMainSection = '#overview';
         if (currentHash.includes('scan')) {
             activeMainSection = '#scan-endpoints';
+        } else if (currentHash.includes('chat')) { // Added chat endpoints
+            activeMainSection = '#chat-endpoints';
         } else if (currentHash.includes('auth') || currentHash === '#frontend-implementation') {
             activeMainSection = '#auth-endpoints';
         }
 
-        // Set active main section
+        // Set active main section and open its dropdown if it's a dropdown toggle
         mainSectionLinks.forEach(link => {
             if (link.getAttribute('href') === activeMainSection) {
                 link.classList.add('active-section');
+                const parentDropdownToggle = link.closest('.dropdown-toggle');
+                if (parentDropdownToggle) {
+                    parentDropdownToggle.classList.add('active');
+                    const dropdownMenu = parentDropdownToggle.querySelector('.dropdown-menu');
+                    if (dropdownMenu) {
+                        dropdownMenu.classList.add('active');
+                    }
+                }
             }
         });
 
         // Set active sub-item
         if (currentHash !== '#overview' &&
             currentHash !== '#scan-endpoints' &&
+            currentHash !== '#chat-endpoints' && // Added chat endpoints
             currentHash !== '#auth-endpoints') {
             const activeEndpointLink = document.querySelector(`.sidenav a[href="${currentHash}"]`);
             if (activeEndpointLink) {
@@ -90,8 +111,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const sectionHeight = section.offsetHeight;
             const sectionId = section.getAttribute('id');
 
-            if (window.scrollY >= sectionTop - 100 &&
-                window.scrollY < sectionTop + sectionHeight - 100) {
+            // Adjust scroll threshold for better active state detection
+            if (window.scrollY >= sectionTop - 150 &&
+                window.scrollY < sectionTop + sectionHeight - 150) {
                 currentSection = '#' + sectionId;
             }
         });
@@ -100,6 +122,25 @@ document.addEventListener('DOMContentLoaded', function() {
             history.replaceState(null, null, currentSection);
             updateActiveStates();
         }
+    });
+
+    // Dropdown toggle functionality
+    document.querySelectorAll('.sidenav .dropdown-toggle > a').forEach(toggleLink => {
+        toggleLink.addEventListener('click', function(e) {
+            // Prevent default anchor link behavior if it's a dropdown toggle
+            // Only prevent if the click is on the main link, not a sub-item
+            if (this.parentElement.classList.contains('dropdown-toggle')) {
+                e.preventDefault();
+            }
+
+            const parentLi = this.parentElement;
+            const dropdownMenu = parentLi.querySelector('.dropdown-menu');
+
+            if (parentLi && dropdownMenu) {
+                parentLi.classList.toggle('active');
+                dropdownMenu.classList.toggle('active');
+            }
+        });
     });
 
     console.log('Anevia API Documentation loaded');
