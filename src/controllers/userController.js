@@ -216,7 +216,18 @@ exports.updateUserProfile = async (request, h) => {
     }
 
     // Update user profile
-    const updatedUser = await User.updateProfile(uid, { username, birthdate });
+    const updates = {};
+
+    if (username !== undefined) {
+        updates.username = username;
+    }
+
+    // Convert empty string birthdate to null for database
+    if (birthdate !== undefined) {
+        updates.birthdate = birthdate === '' ? null : birthdate;
+    }
+
+    const updatedUser = await User.updateProfile(uid, updates);
 
     if (!updatedUser) {
       return h.response({

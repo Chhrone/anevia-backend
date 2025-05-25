@@ -25,7 +25,7 @@ const init = async () => {
             }
         }
     });
-
+    
     // Register plugins
     await server.register(Inert);
 
