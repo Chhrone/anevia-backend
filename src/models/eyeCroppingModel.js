@@ -1,33 +1,51 @@
 'use strict';
 
+const axios = require('axios');
+const FormData = require('form-data');
+
 /**
- * Mock model for eye image cropping to extract conjunctiva
- * This simulates a machine learning model that would analyze the eye image
- * and extract only the conjunctiva region
+ * Eye cropping model that uses external API for conjunctiva extraction
+ * Sends eye images to external endpoint and returns cropped conjunctiva image
  */
 class EyeCroppingModel {
     /**
-     * Process an eye image to extract the conjunctiva region
+     * Process an eye image to extract the conjunctiva region using external API
      * @param {Buffer} imageBuffer - The original eye image data as a buffer
      * @returns {Promise<Buffer>} - A buffer containing the cropped conjunctiva image
      */
     static async extractConjunctiva(imageBuffer) {
-        // Simulate processing time (0.5-1.5 seconds)
-        const processingTime = Math.floor(Math.random() * 1000) + 500;
-        
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                // In a real implementation, this would use computer vision to:
-                // 1. Detect the eye in the image
-                // 2. Identify the conjunctiva region
-                // 3. Crop the image to extract only that region
-                // 4. Return the cropped image
-                
-                // For this mock, we'll just return the original image buffer
-                // In a real implementation, this would return a modified buffer
-                resolve(imageBuffer);
-            }, processingTime);
-        });
+        try {
+            // Create form data for multipart/form-data request
+            const formData = new FormData();
+            formData.append('file', imageBuffer, {
+                filename: 'eye_image.jpg',
+                contentType: 'image/jpeg'
+            });
+
+            // API endpoint for conjunctiva cropping at localhost:8000
+            const CROPPING_API_URL = process.env.EYE_CROPPING_API_URL || 'http://localhost:8000/crop/';
+            const response = await axios.post(CROPPING_API_URL, formData, {
+                headers: {
+                    ...formData.getHeaders(),
+                    'Content-Type': 'multipart/form-data'
+                },
+                responseType: 'arraybuffer', // Important: to receive image data as buffer
+                timeout: 30000 // 30 second timeout
+            });
+
+            // Convert response data to Buffer
+            const conjunctivaBuffer = Buffer.from(response.data);
+
+            console.log('Eye cropping completed successfully - received PNG image');
+            return conjunctivaBuffer;
+
+        } catch (error) {
+            console.error('Error in eye cropping model:', error.message);
+
+            // Fallback: return original image if API fails
+            console.log('Falling back to original image due to API error');
+            return imageBuffer;
+        }
     }
 }
 

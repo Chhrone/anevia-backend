@@ -98,8 +98,14 @@ CREATE TABLE scans (
   scan_id VARCHAR(10) PRIMARY KEY,
   photo_url VARCHAR(50) NOT NULL,
   scan_result BOOLEAN NOT NULL,
+  confidence DECIMAL(5,4),
   scan_date TIMESTAMP NOT NULL
 );
+```
+
+### Add confidence column to existing scans table
+```sql
+ALTER TABLE scans ADD COLUMN confidence DECIMAL(5,4);
 ```
 
 ### Users Table

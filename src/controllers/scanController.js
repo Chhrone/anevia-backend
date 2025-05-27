@@ -25,6 +25,7 @@ exports.getAllScans = async (request, h) => {
             scanId: scan.scanId,
             photoUrl: scan.photoUrl,
             scanResult: scan.scanResult,
+            confidence: scan.confidence,
             scanDate: scan.scanDate
         }));
 
@@ -60,6 +61,7 @@ exports.getScanById = async (request, h) => {
             scanId: scan.scanId,
             photoUrl: scan.photoUrl,
             scanResult: scan.scanResult,
+            confidence: scan.confidence,
             scanDate: scan.scanDate
         };
 
@@ -139,7 +141,11 @@ exports.uploadScan = async (request, h) => {
 
         // Step 2: Use the anemia detection model to analyze the conjunctiva
         console.log(`Analyzing conjunctiva image ${scanId} for anemia detection...`);
-        const scanResult = await AnemiaDetectionModel.analyzeConjunctiva(conjunctivaBuffer);
+        const detectionResult = await AnemiaDetectionModel.analyzeConjunctiva(conjunctivaBuffer);
+
+        // Extract detection result and confidence
+        const scanResult = detectionResult.detection === "Anemic";
+        const confidence = detectionResult.confidence.Anemic; // Store the confidence for "Anemic" detection
 
         // Record the timestamp after all processing is complete
         const scanDate = new Date();
@@ -148,7 +154,8 @@ exports.uploadScan = async (request, h) => {
         const scan = new Scan({
             scanId,
             photoUrl,
-            scanResult, // true or false based on anemia detection
+            scanResult, // true if "Anemic", false if "Non-Anemic"
+            confidence, // confidence score for anemic detection
             scanDate
         });
 
@@ -161,7 +168,7 @@ exports.uploadScan = async (request, h) => {
             data: {
                 scanId,
                 photoUrl,
-                scanResult,
+                detectionDetails: detectionResult, // Include full detection result with both confidence scores
                 scanDate
             }
         }).code(201);

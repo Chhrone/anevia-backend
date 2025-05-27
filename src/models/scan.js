@@ -3,10 +3,11 @@
 const db = require('../config/database');
 
 class Scan {
-    constructor({ scanId, photoUrl, scanResult, scanDate }) {
+    constructor({ scanId, photoUrl, scanResult, confidence, scanDate }) {
         this.scanId = scanId;
         this.photoUrl = photoUrl;
         this.scanResult = scanResult;
+        this.confidence = confidence;
         this.scanDate = scanDate;
     }
 
@@ -14,11 +15,11 @@ class Scan {
     static async add(scan) {
         try {
             const query = `
-                INSERT INTO scans (scan_id, photo_url, scan_result, scan_date)
-                VALUES ($1, $2, $3, $4)
+                INSERT INTO scans (scan_id, photo_url, scan_result, confidence, scan_date)
+                VALUES ($1, $2, $3, $4, $5)
                 RETURNING *
             `;
-            const values = [scan.scanId, scan.photoUrl, scan.scanResult, scan.scanDate];
+            const values = [scan.scanId, scan.photoUrl, scan.scanResult, scan.confidence, scan.scanDate];
             const result = await db.query(query, values);
             return result.rows[0];
         } catch (error) {
@@ -41,6 +42,7 @@ class Scan {
                 scanId: scan.scan_id,
                 photoUrl: scan.photo_url,
                 scanResult: scan.scan_result,
+                confidence: scan.confidence,
                 scanDate: scan.scan_date
             });
         } catch (error) {
@@ -58,6 +60,7 @@ class Scan {
                 scanId: scan.scan_id,
                 photoUrl: scan.photo_url,
                 scanResult: scan.scan_result,
+                confidence: scan.confidence,
                 scanDate: scan.scan_date
             }));
         } catch (error) {
@@ -85,6 +88,7 @@ class Scan {
                 scanId: scan.scan_id,
                 photoUrl: scan.photo_url,
                 scanResult: scan.scan_result,
+                confidence: scan.confidence,
                 scanDate: scan.scan_date
             });
         } catch (error) {

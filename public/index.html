@@ -110,8 +110,8 @@
                                 <li>Original eye image is saved to <code>/images/scans/scan-{scanId}.jpg</code></li>
                                 <li>Eye cropping AI model extracts the conjunctiva region</li>
                                 <li>Cropped conjunctiva is saved to <code>/images/conjunctivas/conj-{scanId}.jpg</code></li>
-                                <li>Anemia detection AI model analyzes the conjunctiva image</li>
-                                <li>Results are stored in the database and returned to the client</li>
+                                <li>Anemia detection API (localhost:8000/detect/) analyzes the conjunctiva image</li>
+                                <li>Results with confidence scores are stored in the database and returned to the client</li>
                             </ol>
                         </div>
 
@@ -123,7 +123,13 @@
   "data": {
     "scanId": "a1b2c3d4",
     "photoUrl": "/scans/scan-a1b2c3d4.jpg",
-    "scanResult": true,
+    "detectionDetails": {
+      "detection": "Anemic",
+      "confidence": {
+        "Anemic": 0.85,
+        "Non-Anemic": 0.15
+      }
+    },
     "scanDate": "2023-05-20T12:34:56.789Z"
   }
 }</code></pre>
@@ -152,12 +158,14 @@
       "scanId": "a1b2c3d4",
       "photoUrl": "/scans/scan-a1b2c3d4.jpg",
       "scanResult": true,
+      "confidence": 0.85,
       "scanDate": "2023-05-20T12:34:56.789Z"
     },
     {
       "scanId": "e5f6g7h8",
       "photoUrl": "/scans/scan-e5f6g7h8.jpg",
       "scanResult": false,
+      "confidence": 0.23,
       "scanDate": "2023-05-19T10:24:36.123Z"
     }
   ]
@@ -194,6 +202,7 @@
     "scanId": "a1b2c3d4",
     "photoUrl": "/scans/scan-a1b2c3d4.jpg",
     "scanResult": true,
+    "confidence": 0.85,
     "scanDate": "2023-05-20T12:34:56.789Z"
   }
 }</code></pre>
